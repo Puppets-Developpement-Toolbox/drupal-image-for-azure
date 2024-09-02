@@ -8,7 +8,7 @@ if [ "${AZURE_ID}" ]; then
 fi
 
 # load secrets from keyvault
-if [ "${KEYVAULT}" and ! -f $ONCE_FLAG ]; then
+if [[ "${KEYVAULT}" && ! -f $ONCE_FLAG ]]; then
 
   secrets="$(az keyvault secret list \
     --vault-name $KEYVAULT \

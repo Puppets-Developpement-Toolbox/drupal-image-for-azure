@@ -10,10 +10,10 @@ echo "Starting CRON service ..."
 service cron start
 
 echo "Loading azure secrets ..."
-bash load-secrets.sh
+load-azure-secrets
 
 echo "Run deploy tasks ..."
-bash deploy.sh
+drupal-deploy
 
 echo "Starting Apache server ..."
 apache2-foreground
