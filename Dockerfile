@@ -1,18 +1,18 @@
 FROM drupal:10-php8.3-apache-bookworm
 
 COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-drupal-entrypoint
-COPY scripts/load-azure-secrets.sh /usr/local/bin/
+COPY scripts/load-azure-secrets.sh /usr/local/bin/load-azure-secrets
 COPY scripts/deploy.sh /usr/local/bin/drupal-deploy
 
 # Start and enable SSH
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends cron \
-    && apt-get install -y --no-install-recommends dialog \
-    && apt-get install -y --no-install-recommends openssh-server \
-    && echo "root:Docker!" | chpasswd \
-    && chmod u+x /usr/local/bin/docker-drupal-entrypoint \
-    && chmod u+x /usr/local/bin/load-azure-secrets \
-    && chmod u+x /usr/local/bin/drupal-deploy
+RUN apt-get update 
+RUN apt-get install -y --no-install-recommends \
+    cron dialog openssh-server 
+RUN rm -rf /var/lib/apt/lists/*
+RUN echo "root:Docker!" | chpasswd 
+RUN chmod u+x /usr/local/bin/docker-drupal-entrypoint \
+    /usr/local/bin/load-azure-secrets \
+    /usr/local/bin/drupal-deploy
     
 COPY ./config/sshd_config /etc/ssh/
 
