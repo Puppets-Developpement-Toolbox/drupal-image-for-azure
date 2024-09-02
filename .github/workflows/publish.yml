@@ -8,7 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: drupal-azure-base
+  IMAGE_NAME: puppets-developpement-toolbox/drupal-azure-base
 
 jobs:
   build-and-push-image:
