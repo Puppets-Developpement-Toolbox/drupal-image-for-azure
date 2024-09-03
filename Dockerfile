@@ -7,7 +7,7 @@ COPY scripts/deploy.sh /usr/local/bin/drupal-deploy
 # Start and enable SSH
 RUN apt-get update 
 RUN apt-get install -y --no-install-recommends \
-    cron dialog openssh-server 
+    cron dialog openssh-server  git
 RUN rm -rf /var/lib/apt/lists/*
 RUN echo "root:Docker!" | chpasswd 
 RUN chmod u+x /usr/local/bin/docker-drupal-entrypoint \
