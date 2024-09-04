@@ -1,5 +1,6 @@
 #!/bin/sh
 
+BASEPATH=/opt/drupal
 ONCE_FLAG=$BASEPATH/deploy-runned
 
 if [ ! -f $BASEPATH/vendor/bin/drush ]; then
