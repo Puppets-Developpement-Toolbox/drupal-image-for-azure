@@ -3,6 +3,7 @@ FROM drupal:10-php8.3-apache-bookworm
 RUN sed -i 's/ServerTokens OS/ServerTokens Prod/g' /etc/apache2/conf-enabled/security.conf
 RUN sed -i 's/ServerSignature On/ServerSignature Off/g' /etc/apache2/conf-enabled/security.conf
 RUN echo 'Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"' >> /etc/apache2/conf-enabled/security.conf 
+RUN a2enmod headers
 
 COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-drupal-entrypoint
 COPY scripts/load-azure-secrets.sh /usr/local/bin/load-azure-secrets
@@ -12,7 +13,6 @@ COPY scripts/deploy.sh /usr/local/bin/drupal-deploy
 RUN apt-get update 
 RUN apt-get install -y --no-install-recommends \
     cron dialog openssh-server  git
-RUN rm -rf /var/lib/apt/lists/*
 RUN echo "root:Docker!" | chpasswd 
 RUN chmod u+x /usr/local/bin/docker-drupal-entrypoint \
     /usr/local/bin/load-azure-secrets \
@@ -26,5 +26,7 @@ RUN curl https://dl.cacerts.digicert.com/DigiCertGlobalRootCA.crt.pem > DigiCert
 
 RUN echo "21 * * * * www-data php /opt/drupal/vendor/bin/drush cron  >> /var/log/cron.log 2>&1" > /etc/cron.d/drupal
 
+RUN rm -rf /var/lib/apt/lists/*
 
-ENTRYPOINT [ "docker-drupal-entrypoint" ] 
+ENTRYPOINT ["docker-drupal-entrypoint"]
+CMD ["apache2-foreground"]
