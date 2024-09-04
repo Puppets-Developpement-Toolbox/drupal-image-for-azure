@@ -1,5 +1,9 @@
 FROM drupal:10-php8.3-apache-bookworm
 
+RUN sed -i 's/ServerTokens OS/ServerTokens Prod/g' /etc/apache2/conf-enabled/security.conf
+RUN sed -i 's/ServerSignature On/ServerSignature Off/g' /etc/apache2/conf-enabled/security.conf
+RUN echo 'Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"' >> /etc/apache2/conf-enabled/security.conf 
+
 COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-drupal-entrypoint
 COPY scripts/load-azure-secrets.sh /usr/local/bin/load-azure-secrets
 COPY scripts/deploy.sh /usr/local/bin/drupal-deploy
