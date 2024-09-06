@@ -12,7 +12,7 @@ COPY scripts/deploy.sh /usr/local/bin/drupal-deploy
 # Start and enable SSH
 RUN apt-get update 
 RUN apt-get install -y --no-install-recommends \
-    cron dialog openssh-server  git
+    cron dialog openssh-server git mariadb-client 
 RUN echo "root:Docker!" | chpasswd 
 RUN chmod u+x /usr/local/bin/docker-drupal-entrypoint \
     /usr/local/bin/load-azure-secrets \
