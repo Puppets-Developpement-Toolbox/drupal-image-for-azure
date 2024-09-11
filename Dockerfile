@@ -22,6 +22,7 @@ COPY ./config/sshd_config /etc/ssh/
 
 EXPOSE 80 2222
 
+ENV DB_SSL 1
 RUN curl https://dl.cacerts.digicert.com/DigiCertGlobalRootCA.crt.pem > DigiCertGlobalRootCA.crt.pem
 
 RUN echo "21 * * * * www-data php /opt/drupal/vendor/bin/drush cron  >> /var/log/cron.log 2>&1" > /etc/cron.d/drupal
