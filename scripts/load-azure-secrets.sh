@@ -29,4 +29,4 @@ if [[ "${KEYVAULT}" && ! -f $ONCE_FLAG ]]; then
 fi
 
 # save other env
-printenv | sed -e 's/=/="/' -e 's/$/"/' >> $BASEPATH/.env
+printenv | sed -e 's/=/="/' -e 's/$/"/' | grep -v "_=" >> $BASEPATH/.env
