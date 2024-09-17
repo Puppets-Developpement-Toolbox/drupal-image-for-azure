@@ -27,3 +27,6 @@ if [[ "${KEYVAULT}" && ! -f $ONCE_FLAG ]]; then
 
   touch $ONCE_FLAG
 fi
+
+# save other env
+printenv >> $BASEPATH/.env
