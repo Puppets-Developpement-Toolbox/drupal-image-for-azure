@@ -29,4 +29,4 @@ if [[ "${KEYVAULT}" && ! -f $ONCE_FLAG ]]; then
 fi
 
 # save other env
-printenv >> $BASEPATH/.env
+export >> $BASEPATH/.env
