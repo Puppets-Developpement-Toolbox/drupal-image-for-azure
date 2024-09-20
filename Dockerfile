@@ -27,6 +27,8 @@ EXPOSE 80 2222
 ENV DB_SSL=1
 RUN curl https://dl.cacerts.digicert.com/DigiCertGlobalRootCA.crt.pem > DigiCertGlobalRootCA.crt.pem
 
+RUN rm /opt/drupal
+
 RUN echo "21 * * * * root drush-www cron  >> /var/log/cron.log 2>&1" >> /etc/crontab
 RUN touch /var/log/cron.log
 
