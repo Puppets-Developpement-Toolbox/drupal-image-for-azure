@@ -1,5 +1,8 @@
 FROM drupal:10-php8.3-apache-bookworm
 
+# rm drupal
+RUN rm -rf /opt/drupal && mkdir /opt/drupal
+
 # secure apache
 RUN sed -i 's/ServerTokens OS/ServerTokens Prod/g' /etc/apache2/conf-enabled/security.conf
 RUN sed -i 's/ServerSignature On/ServerSignature Off/g' /etc/apache2/conf-enabled/security.conf
@@ -30,8 +33,6 @@ RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 # prepare mysql ssl support
 ENV DB_SSL=1
 RUN curl https://dl.cacerts.digicert.com/DigiCertGlobalRootCA.crt.pem > DigiCertGlobalRootCA.crt.pem
-
-RUN rm -rf /opt/drupal/*
 
 # schedule drupal cron
 RUN echo "21 * * * * root drush-www cron  >> /var/log/cron.log 2>&1" >> /etc/crontab
