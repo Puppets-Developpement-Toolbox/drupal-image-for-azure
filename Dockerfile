@@ -21,7 +21,7 @@ RUN chmod u+x /usr/local/bin/docker-drupal-entrypoint \
 
 # Start and enable SSH
 RUN apt-get update 
-RUN apt-get install -y --no-install-recommends \
+RUN apt-get install -y --no-install-recommends jq \
     cron dialog openssh-server git mariadb-client 
 RUN echo "root:Docker!" | chpasswd 
 COPY ./config/sshd_config /etc/ssh/
