@@ -33,11 +33,10 @@ if [[ "${KEYVAULT}" && ! -f $ONCE_FLAG ]]; then
     ENV_NAME="$(echo ${SECRET_ID#*$SECRET_PREFIX} | tr - _)"
     echo "$ENV_NAME=\"$SECRET_VALUE\"" >> $BASEPATH/.env
   done
-
-  touch $ONCE_FLAG
 fi
 
 # save other env
 if [ ! -f $ONCE_FLAG ]; then
   printenv | sed -e 's/=/="/' -e 's/$/"/' | grep -v "_=" >> $BASEPATH/.env
+  touch $ONCE_FLAG
 fi
