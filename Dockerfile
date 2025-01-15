@@ -10,8 +10,8 @@ RUN echo 'Header always set Strict-Transport-Security "max-age=31536000; include
 RUN a2enmod headers
 
 # install php module + config
-RUN pecl install uploadprogress \
-    && docker-php-ext-enable uploadprogress
+RUN pecl install uploadprogress apcu \
+    && docker-php-ext-enable uploadprogress apcu
 COPY config/php.ini /usr/local/etc/php/conf.d/puppets-php.ini
 
 # add homemade scripts
