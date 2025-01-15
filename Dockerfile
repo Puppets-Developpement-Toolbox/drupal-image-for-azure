@@ -3,11 +3,16 @@ FROM drupal:10-php8.3-apache-bookworm
 # rm drupal
 RUN rm -rf /opt/drupal && mkdir /opt/drupal
 
-# secure apache
+# secure
 RUN sed -i 's/ServerTokens OS/ServerTokens Prod/g' /etc/apache2/conf-enabled/security.conf
 RUN sed -i 's/ServerSignature On/ServerSignature Off/g' /etc/apache2/conf-enabled/security.conf
-RUN echo 'Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"' >> /etc/apache2/conf-enabled/security.conf 
+RUN echo 'Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"' >> /etc/apache2/conf-enabled/security.conf
 RUN a2enmod headers
+
+# install php module + config
+RUN pecl install uploadprogress \
+    && docker-php-ext-enable uploadprogress
+COPY config/php.ini /usr/local/etc/php/conf.d/puppets-php.ini
 
 # add homemade scripts
 COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-drupal-entrypoint
@@ -20,10 +25,10 @@ RUN chmod u+x /usr/local/bin/docker-drupal-entrypoint \
     /usr/local/bin/drush-www
 
 # Start and enable SSH
-RUN apt-get update 
+RUN apt-get update
 RUN apt-get install -y --no-install-recommends jq \
-    cron dialog openssh-server git mariadb-client 
-RUN echo "root:Docker!" | chpasswd 
+    cron dialog openssh-server git mariadb-client
+RUN echo "root:Docker!" | chpasswd
 COPY ./config/sshd_config /etc/ssh/
 EXPOSE 80 2222
 
