@@ -8,5 +8,5 @@ USER=www-data
 temp=$(mktemp)
 echo "php $BASEPATH/vendor/bin/drush $@" > $temp
 chown $USER $temp
-su -l $USER -s /bin/bash -c "bash $temp"
+su $USER -s /bin/bash -c "bash $temp"
 rm $temp
