@@ -11,8 +11,8 @@ RUN a2enmod headers
 
 # install php module + config
 RUN pecl install uploadprogress apcu \
-    docker-php-ext-install mysqli \
-    docker-php-ext-enable mysqli uploadprogress apcu
+    && docker-php-ext-install mysqli \
+    && docker-php-ext-enable mysqli uploadprogress apcu
 COPY config/php.ini /usr/local/etc/php/conf.d/puppets-php.ini
 
 # add homemade scripts
