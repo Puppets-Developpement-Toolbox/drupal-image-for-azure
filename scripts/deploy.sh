@@ -14,6 +14,8 @@ fi
 
 if [ ! -f $ONCE_FLAG ]; then
 
+  PRIVATE_PATH=$(drush-www ev 'print_r\(Drupal\\Core\\Site\\Settings::get\(\"file_private_path\"\)\);')
+  drush-www sql:dump --gzip --result-file=$PRIVATE_PATH/premep.sql --structure-tables-list=cache,cache_*
   drush-www maint:set 1
   drush-www cache:rebuild
   drush-www updatedb
