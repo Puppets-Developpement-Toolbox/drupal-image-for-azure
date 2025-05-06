@@ -14,7 +14,7 @@ fi
 
 if [ ! -f $ONCE_FLAG ]; then
 
-  PRIVATE_PATH=$(drush-www drupal:directory private)
+  PRIVATE_PATH=/opt/drupal/storage/private #$(drush-www drupal:directory private)
   drush-www sql:dump --gzip --result-file=$PRIVATE_PATH/premep.sql --structure-tables-list=cache,cache_*
   drush-www maint:set 1
   drush-www cache:rebuild
