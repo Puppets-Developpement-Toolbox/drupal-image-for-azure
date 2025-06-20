@@ -1,7 +1,6 @@
 #!/bin/sh
 
 set -e
-set -x
 
 BASEPATH=/opt/drupal
 ONCE_FLAG=$BASEPATH/deploy-runned
