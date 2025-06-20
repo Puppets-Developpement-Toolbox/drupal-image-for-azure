@@ -2,7 +2,8 @@
 
 BASEPATH=/opt/drupal
 ONCE_FLAG=$BASEPATH/keyvault-loaded
-set -ex
+set -e
+
 # load secrets from keyvault
 if [[ "${KEYVAULT}" && ! -f $ONCE_FLAG ]]; then
 
