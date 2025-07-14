@@ -2,7 +2,7 @@
 
 BASEPATH=/opt/drupal
 ONCE_FLAG=$BASEPATH/keyvault-loaded
-set -e
+set -ex
 
 # load secrets from keyvault
 if [[ "${KEYVAULT}" && ! -f $ONCE_FLAG ]]; then
@@ -18,7 +18,16 @@ if [[ "${KEYVAULT}" && ! -f $ONCE_FLAG ]]; then
 
   # Retrieve the secrets from Key Vault
   SECRET_API_VERSION="2016-10-01"
-  SECRETS=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" "https://$KEYVAULT.vault.azure.net/secrets?api-version=$SECRET_API_VERSION" | jq -r .value | jq -r '.[].id')
+  SECRETS_API_RESPONSE=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" "https://$KEYVAULT.vault.azure.net/secrets?api-version=$SECRET_API_VERSION")
+  SECRETS_API_VALUE=$(echo $SECRETS_API_RESPONSE | jq -r .value)
+
+  if [ -z "$SECRETS_API_VALUE" ]; then
+      echo "Failed to obtain secrets from api."
+      echo $SECRETS_API_RESPONSE | jq -r .error.message
+      exit 1
+  fi
+  
+  SECRETS=$(echo $SECRETS_API_VALUE | jq -r .value | jq -r '.[].id')
 
   if [ -z "$SECRETS" ]; then
       echo "No secrets found."
