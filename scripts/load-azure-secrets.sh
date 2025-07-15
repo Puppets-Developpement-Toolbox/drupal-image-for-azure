@@ -27,7 +27,7 @@ if [[ "${KEYVAULT}" && ! -f $ONCE_FLAG ]]; then
       exit 1
   fi
   
-  SECRETS=$(echo $SECRETS_API_VALUE | jq -r .value | jq -r '.[].id')
+  SECRETS=$(echo $SECRETS_API_VALUE | jq -r '.[].id')
 
   if [ -z "$SECRETS" ]; then
       echo "No secrets found."
