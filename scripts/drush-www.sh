@@ -8,5 +8,12 @@ USER=www-data
 temp=$(mktemp)
 echo "$BASEPATH/vendor/bin/drush $@" > $temp
 chown $USER $temp
-su $USER -s /bin/bash -c "bash $temp"
+
+if [ "$(whoami)" == $USER ]
+then
+  bash $temp
+else
+  su $USER -s /bin/bash -c "bash $temp"
+fi
+
 rm $temp
