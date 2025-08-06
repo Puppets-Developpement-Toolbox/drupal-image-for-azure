@@ -7,8 +7,8 @@ set -ex
 # load secrets from keyvault
 if [[ "${KEYVAULT}" && ! -f $ONCE_FLAG ]]; then
 
-  if [[ "${SECRET_NAMESPACE}" ]]; then
-      $KEYVAULT=${SECRET_NAMESPACE}_${KEYVAULT}
+  if [[ "${NAMESPACE_ENV}" ]]; then
+      $KEYVAULT=${NAMESPACE_ENV}_${KEYVAULT}
   fi
 
   # Use managed identity to get an access token
