@@ -14,7 +14,7 @@ fi
 if [ ! -f $ONCE_FLAG ]; then
 
   INSTALL=$(drush-www | grep install)
-  if [ ! -f $INSTALL ]; then
+  if [ -z "$INSTALL" ]; then
       PRIVATE_PATH=$(drush-www drupal:directory private)
       drush-www sql:dump --gzip --result-file=$PRIVATE_PATH/premep.sql --structure-tables-list=cache,cache_*
       drush-www maint:set 1
