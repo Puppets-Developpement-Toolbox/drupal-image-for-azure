@@ -13,15 +13,19 @@ fi
 
 if [ ! -f $ONCE_FLAG ]; then
 
-  PRIVATE_PATH=$(drush-www drupal:directory private)
-  drush-www sql:dump --gzip --result-file=$PRIVATE_PATH/premep.sql --structure-tables-list=cache,cache_*
-  drush-www maint:set 1
-  drush-www cache:rebuild
-  drush-www updatedb
-  drush-www config:import -y
-  drush-www locale:update
-  drush-www maint:set 0
-  drush-www cache:rebuild
+  INSTALL=$(drush-www | grep install)
+  if [ ! -f $INSTALL ]; then
+      PRIVATE_PATH=$(drush-www drupal:directory private)
+      drush-www sql:dump --gzip --result-file=$PRIVATE_PATH/premep.sql --structure-tables-list=cache,cache_*
+      drush-www maint:set 1
+      drush-www cache:rebuild
+      drush-www updatedb
+      drush-www config:import -y
+      drush-www locale:update
+      drush-www maint:set 0
+      drush-www cache:rebuild
 
-  touch $ONCE_FLAG
+      touch $ONCE_FLAG
+  fi
+
 fi
