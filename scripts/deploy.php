@@ -37,7 +37,7 @@ if (!$isSuccessful) {
   if (file_exists("{$appRoot}/premep.sql")) {
     // restore database
     echo "###### Rolback deploy\n";
-    run(["drush-www", "sql:query", "--file={$appRoot}/premep.sql"]);
+    $isSuccessful = run(["bash", "scripts/deploy-rollback.sh"]);
   }
 
   throw new Exception("Error on deploy script");
