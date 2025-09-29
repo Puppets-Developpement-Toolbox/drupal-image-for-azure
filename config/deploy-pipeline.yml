@@ -1,0 +1,150 @@
+parameters:
+  - name: group
+    type: string
+  - name: subscription
+    type: string
+  - name: login
+    type: string
+  - name: image
+    type: string
+  - name: appname
+    type: string
+  - name: acr
+    type: string
+  - name: acrSubscription
+    type: string
+  - name: commitHash
+    type: string
+  - name: slackWebhook
+    type: string
+
+steps:
+  - task: CmdLine@2
+    displayName: "Clean builder"
+    inputs:
+      script: |
+        docker image prune --force --filter "until=`docker images --format '{{.CreatedAt}}' | sed -n '2p' | awk '{print $1;}'`"
+
+  - checkout: self
+  - task: Docker@0
+    displayName: Build
+    inputs:
+      azureSubscription: ${{ parameters.subscription }}
+      azureContainerRegistry: '{"loginServer":"${{ parameters.acr }}.azurecr.io", "id" : "/subscriptions/${{ parameters.acrSubscription }}/resourceGroups/${{ parameters.group }}/providers/Microsoft.ContainerRegistry/registries/${{ parameters.acr }}"}'
+      dockerFile: config/dockerfiles/Dockerfile
+      additionalImageTags: ${{ parameters.commitHash }}
+      includeSourceTags: false
+      includeLatestTag: true
+      defaultContext: false
+      context: .
+      timeout: "0"
+      buildArguments: |
+        APP_VERSION=${{ parameters.commitHash }}
+        ACR=${{ parameters.acr }}
+
+  - task: Docker@0
+    displayName: "Push an image"
+    inputs:
+      azureSubscription: ${{ parameters.subscription }}
+      azureContainerRegistry: '{"loginServer":"${{ parameters.acr }}.azurecr.io", "id" : "/subscriptions/${{ parameters.acrSubscription }}/resourceGroups/${{ parameters.group }}/providers/Microsoft.ContainerRegistry/registries/${{ parameters.acr }}"}'
+      action: "Push an image"
+      additionalImageTags: ${{ parameters.commitHash }}
+      includeSourceTags: false
+      includeLatestTag: true
+
+  - task: AzureCLI@2
+    displayName: "ensure staging is stopped"
+    inputs:
+      azureSubscription: ${{ parameters.subscription }}
+      scriptType: "bash"
+      scriptLocation: "inlineScript"
+      inlineScript: |
+        az webapp stop \
+          -g ${{ parameters.group }} \
+          -n ${{ parameters.appname }} \
+          --slot staging
+
+  - task: AzureCLI@2
+    displayName: "Deploy container to web app"
+    inputs:
+      azureSubscription: ${{ parameters.subscription }}
+      scriptType: "bash"
+      scriptLocation: "inlineScript"
+      inlineScript: |
+        az login --identity --username ${{ parameters.login }}
+        az webapp config container set \
+          --name ${{ parameters.appname }} \
+          --resource-group ${{ parameters.group }} \
+          --container-image-name ${{ parameters.acr }}.azurecr.io/${{ parameters.image }}:${{ parameters.commitHash }} \
+          --container-registry-url https://${{ parameters.acr }}.azurecr.io \
+          --slot staging
+
+  - task: AzureCLI@2
+    displayName: "ensure staging is started"
+    inputs:
+      azureSubscription: ${{ parameters.subscription }}
+      scriptType: "bash"
+      scriptLocation: "inlineScript"
+      inlineScript: |
+        az webapp start \
+          -g ${{ parameters.group }} \
+          -n ${{ parameters.appname }} \
+          --slot staging
+
+  - task: CmdLine@2
+    displayName: "Run deploy script"
+    inputs:
+      script: |
+        curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php 2>&1 | tee deploy.log
+        if ! grep -q "DEPLOY OK" "deploy.log"; then
+          exit 1
+        fi
+
+  - task: AzureCLI@2
+    displayName: "Swap slots"
+    inputs:
+      azureSubscription: ${{ parameters.subscription }}
+      scriptType: "bash"
+      scriptLocation: "inlineScript"
+      inlineScript: |
+        az webapp deployment slot swap \
+          -g ${{ parameters.group }} \
+          -n ${{ parameters.appname }} \
+          --slot staging \
+          --target-slot production
+
+  - task: AzureCLI@2
+    displayName: "ensure staging is stopped"
+    inputs:
+      azureSubscription: ${{ parameters.subscription }}
+      scriptType: "bash"
+      scriptLocation: "inlineScript"
+      inlineScript: |
+        az webapp stop \
+          -g ${{ parameters.group }} \
+          -n ${{ parameters.appname }} \
+          --slot staging
+
+  - task: AzureCli@2
+    displayName: "notify"
+    inputs:
+      azureSubscription: ${{ parameters.subscription }}
+      scriptType: "bash"
+      scriptLocation: "inlineScript"
+      inlineScript: |
+        curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"Site déployé en ${{replace(variables['Build.SourceBranch'], 'refs/heads/', '') }} version ${{ parameters.commitHash }}\n$(Build.SourceVersionMessage)"}' \
+          ${{ parameters.slackWebhook }}
+
+  - task: AzureCli@2
+    displayName: "Send Slack notification on failure"
+    condition: or(failed(), canceled())
+    inputs:
+      azureSubscription: ${{ parameters.subscription }}
+      scriptType: "bash"
+      scriptLocation: "inlineScript"
+      inlineScript: |
+        curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"Pipeline $(Build.DefinitionName) for $(Build.SourceVersionMessage) failed. See details: $(Build.BuildUri)"}' \
+          ${{ parameters.slackWebhook }}
+      waitForCompletion: "false"
