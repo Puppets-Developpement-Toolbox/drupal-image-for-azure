@@ -11,6 +11,7 @@ chown $USER $temp
 
 if [ "$(whoami)" == $USER ]
 then
+  export HOME=/opt/drupal
   bash $temp
 else
   su $USER -s /bin/bash -c "bash $temp"
