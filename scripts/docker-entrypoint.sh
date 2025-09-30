@@ -30,7 +30,7 @@ if [ "${1#-}" != "$1" ] || [ "${1#apache2-foreground}" != "$1" ]; then
   if [ "$DEPLOYED_VERSION" != "$APP_VERSION" ]
   then
     # let php run the deploy script from http request
-    cp $BASEPATH/scripts/deploy.php $BASEPATH/web/deploy.php
+    cp /usr/local/azure/deploy.php $BASEPATH/web/deploy.php
   fi
 
 fi

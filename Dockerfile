@@ -26,6 +26,9 @@ RUN chmod u+x /usr/local/bin/docker-drupal-entrypoint \
     /usr/local/bin/drupal-deploy \
     /usr/local/bin/drush-www
 
+RUN mkdir /usr/local/azure
+COPY scripts/deploy.php /usr/local/azure/deploy.php
+
 # Start and enable SSH
 RUN apt-get update
 RUN apt-get install -y --no-install-recommends jq \
