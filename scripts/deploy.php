@@ -12,9 +12,8 @@ require_once "autoload.php";
 header("Content-Type: text/event-stream");
 header("Cache-Control: no-cache");
 
-$appRoot = __DIR__ . "/..";
-
 function run($cmd) {
+  $appRoot = __DIR__ . "/..";
   $process = new Process($cmd, $appRoot);
   $process->setTimeout(15 * 60);
   $process->mustRun(function ($type, $buffer) {
@@ -34,6 +33,7 @@ $isSuccessful = run(["bash", "scripts/deploy.sh"]);
 
 
 if (!$isSuccessful) {
+  $appRoot = __DIR__ . "/..";
   if (file_exists("{$appRoot}/premep.sql")) {
     // restore database
     echo "###### Rolback deploy\n";
