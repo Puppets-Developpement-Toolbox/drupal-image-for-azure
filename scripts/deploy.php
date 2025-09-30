@@ -29,7 +29,7 @@ function run($cmd) {
 }
 
 // Run deploy scripts
-$isSuccessful = run(["bash", "scripts/deploy.sh"]);
+$isSuccessful = run(["drupal-deploy"]);
 
 
 if (!$isSuccessful) {
@@ -37,7 +37,7 @@ if (!$isSuccessful) {
   if (file_exists("{$appRoot}/premep.sql")) {
     // restore database
     echo "###### Rolback deploy\n";
-    $isSuccessful = run(["bash", "scripts/deploy-rollback.sh"]);
+    $isSuccessful = run(["drupal-deploy-rollback"]);
   }
 
   throw new Exception("Error on deploy script");

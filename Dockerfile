@@ -20,11 +20,13 @@ COPY config/php.ini /usr/local/etc/php/conf.d/puppets-php.ini
 COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-drupal-entrypoint
 COPY scripts/load-azure-secrets.sh /usr/local/bin/load-azure-secrets
 COPY scripts/deploy.sh /usr/local/bin/drupal-deploy
+COPY scripts/deploy-rollback.sh /usr/local/bin/drupal-deploy-rollback
 COPY scripts/drush-www.sh /usr/local/bin/drush-www
 RUN chmod u+x /usr/local/bin/docker-drupal-entrypoint \
     /usr/local/bin/load-azure-secrets \
     /usr/local/bin/drupal-deploy \
-    /usr/local/bin/drush-www
+    /usr/local/bin/drush-www \
+    /usr/local/bin/drupal-deploy-rollback
 
 RUN mkdir /usr/local/azure
 COPY scripts/deploy.php /usr/local/azure/deploy.php
