@@ -12,20 +12,26 @@ require_once "autoload.php";
 header("Content-Type: text/event-stream");
 header("Cache-Control: no-cache");
 
-function run($cmd) {
-  $appRoot = __DIR__ . "/..";
-  $process = new Process($cmd, $appRoot);
-  $process->setTimeout(15 * 60);
-  $process->mustRun(function ($type, $buffer) {
-    $lines = explode("\n", $buffer);
-    $prefix = Process::ERR === $type ? "ERR > " : "OUT > ";
-    foreach ($lines as $line) {
-      echo "{$prefix}{$line}\n";
+function run($cmd)
+{
+    $appRoot = __DIR__ . "/..";
+    $process = new Process($cmd, $appRoot);
+    $process->setTimeout(15 * 60);
+    try {
+        $process->mustRun(function ($type, $buffer) {
+            $lines = explode("\n", $buffer);
+            $prefix = Process::ERR === $type ? "ERR > " : "OUT > ";
+            foreach ($lines as $line) {
+                echo "{$prefix}{$line}\n";
+            }
+            flush();
+            ob_flush();
+        });
+        return $process->isSuccessful();
+    } catch (Exception $e) {
+        echo "ERR > " . $e->getMessage() . "\n";
+        return false;
     }
-    flush();
-    ob_flush();
-  });
-  return $process->isSuccessful();
 }
 
 // Run deploy scripts
