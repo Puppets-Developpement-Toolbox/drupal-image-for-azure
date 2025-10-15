@@ -52,5 +52,8 @@ RUN touch /var/log/cron.log
 
 RUN rm -rf /var/lib/apt/lists/*
 
+ARG APP_VERSION
+ENV APP_VERSION=$APP_VERSION
+
 ENTRYPOINT ["docker-drupal-entrypoint"]
 CMD ["apache2-foreground"]

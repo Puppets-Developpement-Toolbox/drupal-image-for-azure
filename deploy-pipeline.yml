@@ -40,7 +40,6 @@ steps:
       timeout: "0"
       buildArguments: |
         APP_VERSION=${{ parameters.commitHash }}
-        ACR=${{ parameters.acr }}
 
   - task: Docker@0
     displayName: "Push an image"

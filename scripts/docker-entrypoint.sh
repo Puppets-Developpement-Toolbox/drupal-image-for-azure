@@ -8,6 +8,12 @@ eval $(printenv | sed -n "s/^\([^=]\+\)=\(.*\)$/export \1=\2/p" | sed 's/"/\\\"/
 
 # if we start apache then start cron, ssh and launch deploy
 if [ "${1#-}" != "$1" ] || [ "${1#apache2-foreground}" != "$1" ]; then
+
+  if [ -z "$APP_VERSION" ]; then
+    echo "APP_VERSION is not set"
+    exit 1
+  fi
+
   service ssh start
   service cron start
 
