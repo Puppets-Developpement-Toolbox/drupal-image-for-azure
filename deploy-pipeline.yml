@@ -98,14 +98,14 @@ steps:
         HTTPD=`curl -A "Web Check" -sL --connect-timeout 3 -w "%{http_code}\n" --head "https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php" -o /dev/null`
         TRY=0
         until [ "$HTTPD" == "200" ]; do
-          printf '.'
-          sleep 3
-          HTTPD=`curl -A "Web Check" -sL --connect-timeout 3 -w "%{http_code}\n" --head "https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php" -o /dev/null`
-          TRY=$((TRY+1))
           if [ $TRY -gt 10 ]; then
             echo "Site not reachable"
             exit 1
           fi
+          printf '.'
+          sleep 3
+          HTTPD=`curl -A "Web Check" -sL --connect-timeout 3 -w "%{http_code}\n" --head "https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php" -o /dev/null`
+          TRY=$((TRY+1))
         done
 
   - task: CmdLine@2
