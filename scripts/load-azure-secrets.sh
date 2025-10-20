@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 BASEPATH=/opt/drupal
 ONCE_FLAG=$BASEPATH/keyvault-loaded
@@ -8,7 +8,7 @@ set -ex
 if [[ "${KEYVAULT}" && ! -f $ONCE_FLAG ]]; then
 
   # login to az
-  if [ "${MANAGED_IDENTITY_CLIENT_ID" ]; then
+  if [ "${MANAGED_IDENTITY_CLIENT_ID}" ]; then
     az login --identity --client-id $MANAGED_IDENTITY_CLIENT_ID
   else
     az login --identity
@@ -27,7 +27,7 @@ if [[ "${KEYVAULT}" && ! -f $ONCE_FLAG ]]; then
     # Use the secret value (here we're just echoing it, but you'd typically use it in your application)
     echo "Retrieved secret: $SECRET_ID"
     SECRET_VALUE=$(az keyvault secret show  --id $SECRET_ID --query "value" -o tsv)
-    ENV_NAME=$($(az keyvault secret show  --id $SECRET_ID --query "name" -o tsv | tr - _)
+    ENV_NAME=$(az keyvault secret show  --id $SECRET_ID --query "name" -o tsv | tr - _)
     echo "$ENV_NAME=\"$SECRET_VALUE\"" >> $BASEPATH/.env
   done
 fi
