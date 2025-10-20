@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 BASEPATH=/opt/drupal
 ONCE_FLAG=$BASEPATH/keyvault-loaded
