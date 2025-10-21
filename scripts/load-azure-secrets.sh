@@ -11,7 +11,7 @@ if [[ "${KEYVAULT}" && ! -f $ONCE_FLAG ]]; then
   if [ "${MANAGED_IDENTITY_CLIENT_ID}" ]; then
     az login --identity --client-id $MANAGED_IDENTITY_CLIENT_ID
   else
-    az login --identity
+    az login --identity --allow-no-subscriptions
   fi
 
   # query keyvault to list secret id
