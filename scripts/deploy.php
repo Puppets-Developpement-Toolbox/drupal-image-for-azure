@@ -14,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'HEAD') return;
 require_once "autoload.php";
 header("Content-Type: text/event-stream");
 header("Cache-Control: no-cache");
+set_time_limit(20 * 60); // timeline 20minutes
 
 function run($cmd)
 {
