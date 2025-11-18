@@ -9,7 +9,7 @@ use Symfony\Component\Process\Process;
 
 
 // HEAD verb is used to check if the endpoint is available
-if ($_SERVER['REQUEST_METHOD'] === 'HEAD') return;
+if ($_SERVER['REQUEST_METHOD'] === 'HEAD' || isset($_GET['healthcheck'])) return;
 
 require_once "autoload.php";
 header("Content-Type: text/event-stream");

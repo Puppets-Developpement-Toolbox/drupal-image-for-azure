@@ -20,6 +20,8 @@ Required env :
 - **KEYVAULT** : if set, the name of the Azure Key Vault to fetch secrets from and add them to environment variables
 - **MANAGED_IDENTITY_CLIENT_ID** : if set, the client id of the user assigned managed identity to use for fetching secrets from Key Vault
 
+Setted env :
+- **DB_SSL**: this variable contains the absolute path to the ssl certificate for database connection
 
 ## Deploy pipeline
 
