@@ -95,7 +95,7 @@ steps:
     displayName: "wait for staging to be up"
     inputs:
       script: |
-        HTTPD=`curl -A "Web Check" -sL --connect-timeout 3 -w "%{http_code}\n" --head "https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php" -o /dev/null`
+        HTTPD=`curl -A "Web Check" -sL --connect-timeout 3 -w "%{http_code}\n" --head "https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?healthcheck" -o /dev/null`
         TRY=0
         until [ "$HTTPD" == "200" ]; do
           if [ $TRY -gt 10 ]; then
