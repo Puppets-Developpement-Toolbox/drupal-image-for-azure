@@ -33,6 +33,7 @@ steps:
       azureContainerRegistry: '{"loginServer":"${{ parameters.acr }}.azurecr.io", "id" : "/subscriptions/${{ parameters.acrSubscription }}/resourceGroups/${{ parameters.group }}/providers/Microsoft.ContainerRegistry/registries/${{ parameters.acr }}"}'
       dockerFile: config/dockerfiles/Dockerfile
       additionalImageTags: ${{ parameters.commitHash }}
+      imageName: ${{ parameters.image }}
       includeSourceTags: false
       includeLatestTag: true
       defaultContext: false
@@ -47,6 +48,7 @@ steps:
       azureSubscription: ${{ parameters.subscription }}
       azureContainerRegistry: '{"loginServer":"${{ parameters.acr }}.azurecr.io", "id" : "/subscriptions/${{ parameters.acrSubscription }}/resourceGroups/${{ parameters.group }}/providers/Microsoft.ContainerRegistry/registries/${{ parameters.acr }}"}'
       action: "Push an image"
+      imageName: ${{ parameters.image }}
       additionalImageTags: ${{ parameters.commitHash }}
       includeSourceTags: false
       includeLatestTag: true
