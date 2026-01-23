@@ -26,7 +26,7 @@ if [[ "${KEYVAULT}" && ! -f $ONCE_FLAG ]]; then
   do
     # Use the secret value (here we're just echoing it, but you'd typically use it in your application)
     echo "Retrieved secret: $SECRET_ID"
-    SECRET_VALUE=$(az keyvault secret show  --id $SECRET_ID --query "value" -o tsv)
+    SECRET_VALUE=$(az keyvault secret show  --id $SECRET_ID --query "value" -o tsv)| sed -e 's/"/\"/'
     ENV_NAME=$(az keyvault secret show  --id $SECRET_ID --query "name" -o tsv | tr - _)
     echo "$ENV_NAME=\"$SECRET_VALUE\"" >> $BASEPATH/.env
   done
@@ -34,6 +34,6 @@ fi
 
 # save other env
 if [ ! -f $ONCE_FLAG ]; then
-  printenv | sed -e 's/=/="/' -e 's/$/"/' | grep -v "_=" >> $BASEPATH/.env
+  # printenv | sed -e 's/=/="/' -e 's/$/"/' | grep -v "_=" >> $BASEPATH/.env
   touch $ONCE_FLAG
 fi
