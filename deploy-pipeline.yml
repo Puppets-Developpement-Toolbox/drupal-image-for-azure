@@ -25,7 +25,7 @@ steps:
     displayName: "Clean builder"
     inputs:
       script: |
-        docker prune --al --force --volumes
+        docker prune --all --force --volumes
 
   - checkout: self
   - task: Docker@0
