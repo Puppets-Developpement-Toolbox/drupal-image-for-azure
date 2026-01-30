@@ -1,3 +1,5 @@
+# v20260130
+
 parameters:
   - name: group
     type: string
@@ -23,7 +25,7 @@ steps:
     displayName: "Clean builder"
     inputs:
       script: |
-        docker image prune --force --filter "until=`docker images --format '{{.CreatedAt}}' | sed -n '2p' | awk '{print $1;}'`"
+        docker prune --al --force --volumes
 
   - checkout: self
   - task: Docker@0
