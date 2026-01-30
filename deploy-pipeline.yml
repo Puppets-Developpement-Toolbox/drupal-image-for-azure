@@ -108,7 +108,7 @@ steps:
           fi
           printf '.'
           sleep 3
-          HTTPD=`curl -A "Web Check" -sL --connect-timeout 3 -w "%{http_code}\n" --head "https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php" -o /dev/null`
+          HTTPD=`curl -A "Web Check" -sL --connect-timeout 3 -w "%{http_code}\n" --head "https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?healthcheck" -o /dev/null`
           TRY=$((TRY+1))
         done
 
