@@ -44,15 +44,17 @@ if [ "${1#-}" != "$1" ] || [ "${1#apache2-foreground}" != "$1" ]; then
 
       # add rule in htpaccess
       HTACCESS="$BASEPATH/web/.htaccess"
-      cat <<'EOF' >> "$HTACCESS"
 
-      # BEGIN AUTH BASIC
-      AuthUserFile /opt/drupal/config/.htpasswd
-      AuthName "Accès reservé"
-      AuthType Basic
-      Require valid-user
-      # END AUTH BASIC
-      EOF
+cat <<'EOF' >> "$HTACCESS"
+
+# BEGIN AUTH BASIC
+AuthUserFile /opt/drupal/config/.htpasswd
+AuthName "Accès reservé"
+AuthType Basic
+Require valid-user
+# END AUTH BASIC
+EOF
+
     fi
     # let php run the deploy script from http request
     cp /usr/local/azure/deploy.php $BASEPATH/web/deploy.php
