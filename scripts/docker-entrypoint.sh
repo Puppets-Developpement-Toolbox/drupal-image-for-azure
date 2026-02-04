@@ -35,6 +35,11 @@ if [ "${1#-}" != "$1" ] || [ "${1#apache2-foreground}" != "$1" ]; then
 
   if [ "$DEPLOYED_VERSION" != "$APP_VERSION" ]
   then
+    # Env var exist htpasswd create
+    HTPASSWD="$(printenv | grep -E '^HTPASSWD=' | cut -d= -f2)"
+    if [ -n "$HTPASSWD" ]; then
+      echo "$HTPASSWD" >> $BASEPATH/config/.htpasswd
+    fi
     # let php run the deploy script from http request
     cp /usr/local/azure/deploy.php $BASEPATH/web/deploy.php
   fi
