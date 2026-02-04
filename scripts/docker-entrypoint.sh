@@ -43,19 +43,17 @@ if [ "${1#-}" != "$1" ] || [ "${1#apache2-foreground}" != "$1" ]; then
       fi
       echo "$HTPASSWD" >> $BASEPATH/config/.htpasswd
 
-      # if htpaccess exist add auth basic
+      # add rule in htpaccess
       HTACCESS="$BASEPATH/web/.htaccess"
-      if ! grep -q "# BEGIN AUTH BASIC" "$HTACCESS"; then
-        cat <<'EOF' >> "$HTACCESS"
+      cat <<'EOF' >> "$HTACCESS"
 
-        # BEGIN AUTH BASIC
-        AuthUserFile /opt/drupal/config/.htpasswd
-        AuthName "Accès reservé"
-        AuthType Basic
-        Require valid-user
-        # END AUTH BASIC
-        EOF
-      fi
+      # BEGIN AUTH BASIC
+      AuthUserFile /opt/drupal/config/.htpasswd
+      AuthName "Accès reservé"
+      AuthType Basic
+      Require valid-user
+      # END AUTH BASIC
+      EOF
     fi
     # let php run the deploy script from http request
     cp /usr/local/azure/deploy.php $BASEPATH/web/deploy.php
