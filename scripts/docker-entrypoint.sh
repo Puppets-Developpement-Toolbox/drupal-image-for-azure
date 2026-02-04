@@ -36,7 +36,6 @@ if [ "${1#-}" != "$1" ] || [ "${1#apache2-foreground}" != "$1" ]; then
   if [ "$DEPLOYED_VERSION" != "$APP_VERSION" ]
   then
     # if env var exist htpasswd create
-    HTPASSWD="$(printenv | grep -E '^HTPASSWD=' | cut -d= -f2)"
     if [ -n "$HTPASSWD" ]; then
       if [ ! -f $BASEPATH/config/.htpasswd ]; then
         touch $BASEPATH/config/.htpasswd
