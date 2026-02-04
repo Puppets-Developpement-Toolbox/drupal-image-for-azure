@@ -35,10 +35,27 @@ if [ "${1#-}" != "$1" ] || [ "${1#apache2-foreground}" != "$1" ]; then
 
   if [ "$DEPLOYED_VERSION" != "$APP_VERSION" ]
   then
-    # Env var exist htpasswd create
+    # if env var exist htpasswd create
     HTPASSWD="$(printenv | grep -E '^HTPASSWD=' | cut -d= -f2)"
     if [ -n "$HTPASSWD" ]; then
+      if [ ! -f $BASEPATH/config/.htpasswd ]; then
+        touch $BASEPATH/config/.htpasswd
+      fi
       echo "$HTPASSWD" >> $BASEPATH/config/.htpasswd
+
+      # if htpaccess exist add auth basic
+      HTACCESS="$BASEPATH/web/.htaccess"
+      if ! grep -q "# BEGIN AUTH BASIC" "$HTACCESS"; then
+        cat <<'EOF' >> "$HTACCESS"
+
+        # BEGIN AUTH BASIC
+        AuthUserFile /opt/drupal/config/.htpasswd
+        AuthName "Accès reservé"
+        AuthType Basic
+        Require valid-user
+        # END AUTH BASIC
+        EOF
+      fi
     fi
     # let php run the deploy script from http request
     cp /usr/local/azure/deploy.php $BASEPATH/web/deploy.php
