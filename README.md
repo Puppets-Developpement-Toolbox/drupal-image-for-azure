@@ -28,3 +28,17 @@ Setted env :
 ## Deploy pipeline
 
 // to complete
+
+## Test image
+
+ Use scripts docker-build.sh from the project : 
+- cd myprojectToAzure 
+- ./script/docker-build.sh
+
+ Pulling image azure-pipeline :
+- docker pull azure-pipeline
+
+ Instantiate the image in docker : 
+- docker run [imageNAME] 
+
+Now You can use the image and test it
