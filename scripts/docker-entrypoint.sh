@@ -44,8 +44,18 @@ if [ "${1#-}" != "$1" ] || [ "${1#apache2-foreground}" != "$1" ]; then
 
       # add rule in htpaccess
       HTACCESS="$BASEPATH/web/.htaccess"
-      printf '\n# BEGIN AUTH BASIC\n<If "!(%{HTTP:X-Forwarded-Host} =~ /(^|\.)azurewebsites\.net$/)">\nAuthUserFile /opt/drupal/config/.htpasswd\nAuthName "Accès reservé"\nAuthType Basic\nRequire valid-user\n</If>\n# END AUTH BASIC\n' >> "$HTACCESS"
+      cat <<'EOF' >> "$HTACCESS"
 
+# BEGIN AUTH BASIC
+<If "!( (%{HTTP:X-Forwarded-Host} =~ /(^|\.)azurewebsites\.net$/) || (%{HTTP_HOST} =~ /(^|\.)azurewebsites\.net$/) )">
+AuthUserFile /opt/drupal/config/.htpasswd
+AuthName "Accès reservé"
+AuthType Basic
+Require valid-user
+</If>
+# END AUTH BASIC
+
+EOF
 
     fi
     # let php run the deploy script from http request
