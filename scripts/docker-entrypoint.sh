@@ -30,12 +30,12 @@ if [ "${1#-}" != "$1" ] || [ "${1#apache2-foreground}" != "$1" ]; then
 
 
     # if env var exist htpasswd create
-  if [ -n "$HTTP_ACCESS_USER" && -n "$HTTP_ACCESS_PASS" ]; then
+  if [[ -n "$HTTP_ACCESS_USER" && -n "$HTTP_ACCESS_PASS" ]]; then
     if [ ! -f $BASEPATH/config/.htpasswd ]; then
       touch $BASEPATH/config/.htpasswd
     fi
     echo "$HTPASSWD" >> $BASEPATH/config/.htpasswd
-    htpasswd -b -c "$BASEPATH/web/.htaccess" $HTTP_ACCESS_USER $HTTP_ACCESS_PASS
+    htpasswd -b -c "$BASEPATH/.htpasswd" $HTTP_ACCESS_USER $HTTP_ACCESS_PASS
 
     # add rule in htpaccess
     HTACCESS="$BASEPATH/web/.htaccess"
@@ -43,7 +43,7 @@ if [ "${1#-}" != "$1" ] || [ "${1#apache2-foreground}" != "$1" ]; then
 
 # BEGIN AUTH BASIC
 <If "!( (%{HTTP:X-Forwarded-Host} =~ /(^|\.)azurewebsites\.net$/) || (%{HTTP_HOST} =~ /(^|\.)azurewebsites\.net$/) )">
-AuthUserFile /opt/drupal/config/.htpasswd
+AuthUserFile /opt/drupal/.htpasswd
 AuthName "Accès reservé"
 AuthType Basic
 Require valid-user
