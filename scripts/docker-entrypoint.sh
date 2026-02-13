@@ -28,23 +28,17 @@ if [ "${1#-}" != "$1" ] || [ "${1#apache2-foreground}" != "$1" ]; then
     exit 0
   fi
 
-  # get last deployed version
-  if [ -f $BASEPATH/storage/private/deployed_version ]; then
-    DEPLOYED_VERSION="$(cat $BASEPATH/storage/private/deployed_version)"
-  fi
 
-  if [ "$DEPLOYED_VERSION" != "$APP_VERSION" ]
-  then
     # if env var exist htpasswd create
-    if [ -n "$HTPASSWD" ]; then
-      if [ ! -f $BASEPATH/config/.htpasswd ]; then
-        touch $BASEPATH/config/.htpasswd
-      fi
-      echo "$HTPASSWD" >> $BASEPATH/config/.htpasswd
+  if [ -n "$HTPASSWD" ]; then
+    if [ ! -f $BASEPATH/config/.htpasswd ]; then
+      touch $BASEPATH/config/.htpasswd
+    fi
+    echo "$HTPASSWD" >> $BASEPATH/config/.htpasswd
 
-      # add rule in htpaccess
-      HTACCESS="$BASEPATH/web/.htaccess"
-      cat <<'EOF' >> "$HTACCESS"
+    # add rule in htpaccess
+    HTACCESS="$BASEPATH/web/.htaccess"
+    cat <<'EOF' >> "$HTACCESS"
 
 # BEGIN AUTH BASIC
 <If "!( (%{HTTP:X-Forwarded-Host} =~ /(^|\.)azurewebsites\.net$/) || (%{HTTP_HOST} =~ /(^|\.)azurewebsites\.net$/) )">
@@ -57,7 +51,17 @@ Require valid-user
 
 EOF
 
-    fi
+  fi
+
+
+
+  # get last deployed version
+  if [ -f $BASEPATH/storage/private/deployed_version ]; then
+    DEPLOYED_VERSION="$(cat $BASEPATH/storage/private/deployed_version)"
+  fi
+
+  if [ "$DEPLOYED_VERSION" != "$APP_VERSION" ]
+  then
     # let php run the deploy script from http request
     cp /usr/local/azure/deploy.php $BASEPATH/web/deploy.php
   fi
