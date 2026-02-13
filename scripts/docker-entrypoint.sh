@@ -30,11 +30,12 @@ if [ "${1#-}" != "$1" ] || [ "${1#apache2-foreground}" != "$1" ]; then
 
 
     # if env var exist htpasswd create
-  if [ -n "$HTPASSWD" ]; then
+  if [ -n "$HTTP_ACCESS_USER" && -n "$HTTP_ACCESS_PASS" ]; then
     if [ ! -f $BASEPATH/config/.htpasswd ]; then
       touch $BASEPATH/config/.htpasswd
     fi
     echo "$HTPASSWD" >> $BASEPATH/config/.htpasswd
+    htpasswd -b -c "$BASEPATH/web/.htaccess" $HTTP_ACCESS_USER $HTTP_ACCESS_PASS
 
     # add rule in htpaccess
     HTACCESS="$BASEPATH/web/.htaccess"
