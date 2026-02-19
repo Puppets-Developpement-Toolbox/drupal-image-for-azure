@@ -20,7 +20,7 @@ function run($cmd)
 {
     $appRoot = __DIR__ . "/..";
     $process = new Process($cmd, $appRoot);
-    $process->setTimeout(15 * 60);
+    $process->setTimeout(45 * 60);
     try {
         $process->mustRun(function ($type, $buffer) {
             $lines = explode("\n", $buffer);
