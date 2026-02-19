@@ -6,7 +6,6 @@ BASEPATH=/opt/drupal
 
 drush-www maint:set 1
 drush-www sql:dump --gzip --result-file=$BASEPATH/storage/premep.sql --structure-tables-list=cache,cache_*
-drush-www cache:rebuild
 drush-www updatedb
 drush-www config:import -y
 drush-www locale:update
