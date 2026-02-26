@@ -5,8 +5,13 @@ set -e
 BASEPATH=/opt/drupal
 USER=www-data
 
+quote() { for i in "${@}"; do echo ${i@Q}; done; }
+
 temp=$(mktemp)
-echo "$BASEPATH/vendor/bin/drush $@" > $temp
+drush_params=$(quote "$@")
+echo "#!/bin/bash" > $temp
+echo "set -e" >> $temp
+echo "$BASEPATH/vendor/bin/drush $(echo $drush_params)" >> $temp
 chown $USER $temp
 
 if [ "$(whoami)" == $USER ]
