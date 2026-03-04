@@ -113,10 +113,46 @@ steps:
         done
 
   - task: CmdLine@2
-    displayName: "Run deploy script"
+    displayName: "Set to maintenance"
     inputs:
       script: |
-        curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php 2>&1 | tee deploy.log
+        curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=maint1  2>&1 | tee deploy.log
+        if ! grep -q "DEPLOY OK" "deploy.log"; then
+          exit 1
+        fi
+
+  - task: CmdLine@2
+    displayName: "Run get dump"
+    inputs:
+      script: |
+        curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=dump  2>&1 | tee deploy.log
+        if ! grep -q "DEPLOY OK" "deploy.log"; then
+          exit 1
+        fi
+
+  - task: CmdLine@2
+    displayName: "Run update DB"
+    inputs:
+      script: |
+        curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=updb  2>&1 | tee deploy.log
+        if ! grep -q "DEPLOY OK" "deploy.log"; then
+          exit 1
+        fi
+
+  - task: CmdLine@2
+    displayName: "Run config import"
+    inputs:
+      script: |
+        curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=cim  2>&1 | tee deploy.log
+        if ! grep -q "DEPLOY OK" "deploy.log"; then
+          exit 1
+        fi
+
+  - task: CmdLine@2
+    displayName: "Run config import"
+    inputs:
+      script: |
+        curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=localupd  2>&1 | tee deploy.log
         if ! grep -q "DEPLOY OK" "deploy.log"; then
           exit 1
         fi
@@ -133,6 +169,42 @@ steps:
           -n ${{ parameters.appname }} \
           --slot staging \
           --target-slot production
+
+  - task: CmdLine@2
+    displayName: "Set maintenance to 0"
+    inputs:
+      script: |
+        curl --no-progress-meter https://${{ parameters.appname }}.azurewebsites.net/deploy.php?action=maint0  2>&1 | tee deploy.log
+        if ! grep -q "DEPLOY OK" "deploy.log"; then
+          exit 1
+        fi
+
+  - task: CmdLine@2
+    displayName: "Run cache clear"
+    inputs:
+      script: |
+        curl --no-progress-meter https://${{ parameters.appname }}.azurewebsites.net/deploy.php?action=cr  2>&1 | tee deploy.log
+        if ! grep -q "DEPLOY OK" "deploy.log"; then
+          exit 1
+        fi
+
+  - task: CmdLine@2
+    displayName: "Run version"
+    inputs:
+      script: |
+        curl --no-progress-meter https://${{ parameters.appname }}.azurewebsites.net/deploy.php?action=ver  2>&1 | tee deploy.log
+        if ! grep -q "DEPLOY OK" "deploy.log"; then
+          exit 1
+        fi
+
+  - task: CmdLine@2
+    displayName: "Delete deployment script"
+    inputs:
+      script: |
+        curl --no-progress-meter https://${{ parameters.appname }}.azurewebsites.net/deploy.php?action=rm  2>&1 | tee deploy.log
+        if ! grep -q "DEPLOY OK" "deploy.log"; then
+          exit 1
+        fi
 
   - task: AzureCLI@2
     displayName: "ensure staging is stopped"
