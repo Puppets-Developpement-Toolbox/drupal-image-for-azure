@@ -55,7 +55,7 @@ EOF
     DEPLOYED_VERSION="$(cat $BASEPATH/storage/private/deployed_version)"
   fi
 
-  if [ "$DEPLOYED_VERSION" != "$APP_VERSION" ]
+  if [ "$DEPLOYED_VERSION" != "rm-$APP_VERSION" ]
   then
     # let php run the deploy script from http request
     cp /usr/local/azure/deploy.php $BASEPATH/web/deploy.php
