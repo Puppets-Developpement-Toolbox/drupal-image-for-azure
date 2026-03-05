@@ -39,11 +39,11 @@ function run($cmd, $arg)
 }
 
 // Get action in _GET
-$arg = '';
+$arg = [];
 if(!empty($_GET['action'])){
     $get = $_GET['action'];
     if(in_array($get, ['maint0', 'maint1', 'dump', 'updb', 'cim', 'localupd', 'cr', 'ver', 'rm'])){
-        $arg = $get;
+        $arg['action'] = $get;
     }
 }
 
