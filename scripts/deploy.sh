@@ -2,13 +2,13 @@
 
 set -e
 
-if [ -z "$action" ]; then
+if [ "$#" -ne 1 ]; then
   echo "Usage: ./deploy.sh <arg>"
   echo "Deployment split from arg"
   exit 1
 fi
 
-ACTION=$action
+ACTION=$1
 
 BASEPATH=/opt/drupal
 
