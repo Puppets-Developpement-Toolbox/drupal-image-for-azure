@@ -19,7 +19,12 @@ set_time_limit(20 * 60); // timeline 20minutes
 function run($cmd, $arg)
 {
     $appRoot = __DIR__ . "/..";
-    $process = new Process($cmd, $appRoot, $arg);
+
+    if(!empty($arg)){
+        $cmd[] = $arg;
+    }
+    
+    $process = new Process($cmd, $appRoot);
     $process->setTimeout(45 * 60);
     try {
         $process->mustRun(function ($type, $buffer) {
@@ -39,11 +44,11 @@ function run($cmd, $arg)
 }
 
 // Get action in _GET
-$arg = [];
+$arg = '';
 if(!empty($_GET['action'])){
     $get = $_GET['action'];
     if(in_array($get, ['maint0', 'maint1', 'dump', 'updb', 'cim', 'localupd', 'cr', 'ver', 'rm'])){
-        $arg['action'] = $get;
+        $arg = $get;
     }
 }
 
