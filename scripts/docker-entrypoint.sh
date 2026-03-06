@@ -6,7 +6,7 @@ load-azure-secrets
 # Get env vars in the Dockerfile to show up in the SSH session
 eval $(printenv | sed -n "s/^\([^=]\+\)=\(.*\)$/export \1=\2/p" | sed 's/"/\\\"/g' | sed '/=/s//="/' | sed 's/$/"/' >> /etc/profile)
 
-#environment for cron
+# Environment for cron
 printenv > /etc/environment
 
 # if we start apache then start cron, ssh and launch deploy
