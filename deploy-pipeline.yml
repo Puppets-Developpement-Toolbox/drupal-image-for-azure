@@ -1,4 +1,4 @@
-# v20260304 deploy-multistep
+# v20260320 deploy-multistep
 
 parameters:
   - name: group
@@ -149,7 +149,7 @@ steps:
         fi
 
   - task: CmdLine@2
-    displayName: "Run config import"
+    displayName: "Run local update"
     inputs:
       script: |
         curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=localupd  2>&1 | tee deploy.log
