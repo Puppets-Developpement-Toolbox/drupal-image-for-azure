@@ -1,4 +1,4 @@
-# v20260320 deploy-multistep
+# v20260403 deploy-multistep
 
 parameters:
   - name: group
@@ -125,37 +125,29 @@ steps:
     displayName: "Run get dump"
     inputs:
       script: |
-        curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=dump  2>&1 | tee deploy.log
-        if ! grep -q "DEPLOY OK" "deploy.log"; then
-          exit 1
-        fi
+        source config/deploy/curl-retry.sh
+        deploy_call dump "https://${{ parameters.appname }}-staging.azurewebsites.net"
 
   - task: CmdLine@2
     displayName: "Run update DB"
     inputs:
       script: |
-        curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=updb  2>&1 | tee deploy.log
-        if ! grep -q "DEPLOY OK" "deploy.log"; then
-          exit 1
-        fi
+        source config/deploy/curl-retry.sh
+        deploy_call updb "https://${{ parameters.appname }}-staging.azurewebsites.net"
 
   - task: CmdLine@2
     displayName: "Run config import"
     inputs:
       script: |
-        curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=cim  2>&1 | tee deploy.log
-        if ! grep -q "DEPLOY OK" "deploy.log"; then
-          exit 1
-        fi
+        source config/deploy/curl-retry.sh
+        deploy_call cim "https://${{ parameters.appname }}-staging.azurewebsites.net"
 
   - task: CmdLine@2
     displayName: "Run local update"
     inputs:
       script: |
-        curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=localupd  2>&1 | tee deploy.log
-        if ! grep -q "DEPLOY OK" "deploy.log"; then
-          exit 1
-        fi
+        source config/deploy/curl-retry.sh
+        deploy_call localupd "https://${{ parameters.appname }}-staging.azurewebsites.net"
 
   - task: AzureCLI@2
     displayName: "Swap slots"
@@ -174,37 +166,29 @@ steps:
     displayName: "Set maintenance to 0"
     inputs:
       script: |
-        curl --no-progress-meter https://${{ parameters.appname }}.azurewebsites.net/deploy.php?action=maint0  2>&1 | tee deploy.log
-        if ! grep -q "DEPLOY OK" "deploy.log"; then
-          exit 1
-        fi
+        source config/deploy/curl-retry.sh
+        deploy_call maint0 "https://${{ parameters.appname }}-staging.azurewebsites.net"
 
   - task: CmdLine@2
     displayName: "Run cache clear"
     inputs:
       script: |
-        curl --no-progress-meter https://${{ parameters.appname }}.azurewebsites.net/deploy.php?action=cr  2>&1 | tee deploy.log
-        if ! grep -q "DEPLOY OK" "deploy.log"; then
-          exit 1
-        fi
+        source config/deploy/curl-retry.sh
+        deploy_call cr "https://${{ parameters.appname }}-staging.azurewebsites.net"
 
   - task: CmdLine@2
     displayName: "Run version"
     inputs:
       script: |
-        curl --no-progress-meter https://${{ parameters.appname }}.azurewebsites.net/deploy.php?action=ver  2>&1 | tee deploy.log
-        if ! grep -q "DEPLOY OK" "deploy.log"; then
-          exit 1
-        fi
+        source config/deploy/curl-retry.sh
+        deploy_call ver "https://${{ parameters.appname }}-staging.azurewebsites.net"
 
   - task: CmdLine@2
     displayName: "Delete deployment script"
     inputs:
       script: |
-        curl --no-progress-meter https://${{ parameters.appname }}.azurewebsites.net/deploy.php?action=rm  2>&1 | tee deploy.log
-        if ! grep -q "DEPLOY OK" "deploy.log"; then
-          exit 1
-        fi
+        source config/deploy/curl-retry.sh
+        deploy_call rm "https://${{ parameters.appname }}-staging.azurewebsites.net"
 
   - task: AzureCLI@2
     displayName: "ensure staging is stopped"
@@ -225,8 +209,12 @@ steps:
       scriptType: "bash"
       scriptLocation: "inlineScript"
       inlineScript: |
+        BRANCH=$(echo "$(Build.SourceBranch)" | sed 's|refs/heads/||')
+        MESSAGE=$(jq -n \
+          --arg text "Site déployé en ${BRANCH} version ${{ parameters.commitHash }}\n$(Build.SourceVersionMessage)" \
+          '{text: $text}')
         curl -X POST -H 'Content-type: application/json' \
-          --data '{"text":"Site déployé en ${{replace(variables['Build.SourceBranch'], 'refs/heads/', '') }} version ${{ parameters.commitHash }}\n$(Build.SourceVersionMessage)"}' \
+          --data "$MESSAGE" \
           ${{ parameters.slackWebhook }}
 
   - task: AzureCli@2
@@ -237,7 +225,10 @@ steps:
       scriptType: "bash"
       scriptLocation: "inlineScript"
       inlineScript: |
+        MESSAGE=$(jq -n \
+          --arg text "Pipeline $(Build.DefinitionName) for $(Build.SourceVersionMessage) failed. See details: $(Build.BuildUri)" \
+          '{text: $text}')
         curl -X POST -H 'Content-type: application/json' \
-          --data '{"text":"Pipeline $(Build.DefinitionName) for $(Build.SourceVersionMessage) failed. See details: $(Build.BuildUri)"}' \
+          --data "$MESSAGE" \
           ${{ parameters.slackWebhook }}
       waitForCompletion: "false"
