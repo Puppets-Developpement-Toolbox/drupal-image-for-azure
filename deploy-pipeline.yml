@@ -225,8 +225,9 @@ steps:
       scriptType: "bash"
       scriptLocation: "inlineScript"
       inlineScript: |
+        MSG=$(echo "$(Build.SourceVersionMessage)" | tr -d "'")
         curl -X POST -H 'Content-type: application/json' \
-          --data '{"text":"Site déployé en ${{replace(variables['Build.SourceBranch'], 'refs/heads/', '') }} version ${{ parameters.commitHash }}\n${{replace(Build.SourceVersionMessage, '\'', '') }}"}' \
+          --data "{\"text\":\"Site déployé en ${{replace(variables['Build.SourceBranch'], 'refs/heads/', '') }} version ${{ parameters.commitHash }}\n${MSG}\"}" \
           ${{ parameters.slackWebhook }}
 
   - task: AzureCli@2
@@ -237,7 +238,8 @@ steps:
       scriptType: "bash"
       scriptLocation: "inlineScript"
       inlineScript: |
+        MSG=$(echo "$(Build.SourceVersionMessage)" | tr -d "'")
         curl -X POST -H 'Content-type: application/json' \
-          --data '{"text":"Pipeline $(Build.DefinitionName) for ${{replace(Build.SourceVersionMessage, '\'', '') }} failed. See details: $(Build.BuildUri)"}' \
+          --data "{\"text\":\"Pipeline $(Build.DefinitionName) for ${MSG} failed. See details: $(Build.BuildUri)\"}" \
           ${{ parameters.slackWebhook }}
       waitForCompletion: "false"
