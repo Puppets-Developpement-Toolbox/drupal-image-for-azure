@@ -22,11 +22,13 @@ COPY scripts/load-azure-secrets.sh /usr/local/bin/load-azure-secrets
 COPY scripts/deploy.sh /usr/local/bin/drupal-deploy
 COPY scripts/deploy-rollback.sh /usr/local/bin/drupal-deploy-rollback
 COPY scripts/drush-www.sh /usr/local/bin/drush-www
+COPY scripts/curl-retry.sh /usr/local/azure/curl-retry.sh
 RUN chmod ugoa+x /usr/local/bin/docker-drupal-entrypoint \
     /usr/local/bin/load-azure-secrets \
     /usr/local/bin/drupal-deploy \
     /usr/local/bin/drush-www \
-    /usr/local/bin/drupal-deploy-rollback
+    /usr/local/bin/drupal-deploy-rollback \
+    /usr/local/azure/curl-retry.sh
 
 RUN mkdir /usr/local/azure
 COPY scripts/deploy.php /usr/local/azure/deploy.php

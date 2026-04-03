@@ -62,6 +62,7 @@ EOF
   then
     # let php run the deploy script from http request
     cp /usr/local/azure/deploy.php $BASEPATH/web/deploy.php
+    cp /usr/local/azure/curl-retry.sh $BASEPATH/config/deploy/curl-retry.sh
   fi
 
 fi
