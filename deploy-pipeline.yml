@@ -5,8 +5,6 @@ parameters:
     type: string
   - name: subscription
     type: string
-  - name: login
-    type: string
   - name: image
     type: string
   - name: appname
@@ -67,20 +65,16 @@ steps:
           -n ${{ parameters.appname }} \
           --slot staging
 
-  - task: AzureCLI@2
+  - task: AzureWebAppContainer@1
     displayName: "Deploy container to web app"
     inputs:
       azureSubscription: ${{ parameters.subscription }}
-      scriptType: "bash"
-      scriptLocation: "inlineScript"
-      inlineScript: |
-        az login --identity --username ${{ parameters.login }}
-        az webapp config container set \
-          --name ${{ parameters.appname }} \
-          --resource-group ${{ parameters.group }} \
-          --container-image-name ${{ parameters.acr }}.azurecr.io/${{ parameters.image }}:${{ parameters.commitHash }} \
-          --container-registry-url https://${{ parameters.acr }}.azurecr.io \
-          --slot staging
+      appName: ${{ parameters.appname }}
+      deployToSlotOrASE: true
+      slotName: staging
+      resourceGroupName: ${{ parameters.group }}
+      containers: ${{ parameters.acr }}.azurecr.io/${{ parameters.image }}:${{ parameters.commitHash }}
+          
 
   - task: AzureCLI@2
     displayName: "ensure staging is started"
