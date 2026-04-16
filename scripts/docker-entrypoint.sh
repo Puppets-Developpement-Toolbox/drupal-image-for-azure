@@ -3,11 +3,15 @@ set -e
 
 load-azure-secrets
 
-# Get env vars in the Dockerfile to show up in the SSH session
-eval $(printenv | sed -n "s/^\([^=]\+\)=\(.*\)$/export \1=\2/p" | sed 's/"/\\\"/g' | sed '/=/s//="/' | sed 's/$/"/' >> /etc/profile)
+if [ ! -f /etc/profile.d/azure-env.sh ]; then
+  # Retrieve the environment variables to propagate them in cron and the SSH session.
+  cat /proc/1/environ | tr '\0' '\n' | grep -v '^$' | \
+    grep -vE '^(PATH|HOME|HOSTNAME|TERM|SHLVL|PWD|_)=' \
+    >> /etc/environment
+  ln -s /usr/local/bin/profile-azure-env.sh /etc/profile.d/azure-env.sh
+fi
 
-# Environment for cron
-printenv > /etc/environment
+
 
 # if we start apache then start cron, ssh and launch deploy
 if [ "${1#-}" != "$1" ] || [ "${1#apache2-foreground}" != "$1" ]; then

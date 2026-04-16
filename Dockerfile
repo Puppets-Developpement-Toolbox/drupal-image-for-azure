@@ -22,6 +22,7 @@ COPY scripts/load-azure-secrets.sh /usr/local/bin/load-azure-secrets
 COPY scripts/deploy.sh /usr/local/bin/drupal-deploy
 COPY scripts/deploy-rollback.sh /usr/local/bin/drupal-deploy-rollback
 COPY scripts/drush-www.sh /usr/local/bin/drush-www
+COPY scripts/profile-azure-env.sh /usr/local/bin/profile-azure-env.sh
 RUN chmod ugoa+x /usr/local/bin/docker-drupal-entrypoint \
     /usr/local/bin/load-azure-secrets \
     /usr/local/bin/drupal-deploy \
