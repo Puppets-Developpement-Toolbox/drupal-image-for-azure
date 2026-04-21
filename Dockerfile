@@ -1,54 +1,44 @@
-FROM php:8.3-cli-alpine
+FROM php:8.3-apache
 
-RUN rm -rf /opt/drupal && mkdir -p /opt/drupal
-WORKDIR /opt/drupal
-
-# Install Apache + runtime deps
-RUN apk add --no-cache \
-    apache2 \
-    apache2-ssl \
-    libpng \
-    libjpeg-turbo \
-    libwebp \
-    freetype \
-    libzip \
-    icu-libs \
-    libxml2 \
-    oniguruma \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    unzip \
     curl \
-    gettext \
     jq \
-    openssh \
-    git \
+    cron \
+    openssh-server \
     mariadb-client \
-    parallel
-
-# Install PHP extensions
-RUN apk add --no-cache --virtual .build-deps \
-    $PHPIZE_DEPS \
-    icu-dev \
+    parallel \
+    libicu-dev \
     libpng-dev \
-    libjpeg-turbo-dev \
-    freetype-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
     libzip-dev \
-    libxml2-dev
+    libxml2-dev \
+    libonig-dev \
+    ca-certificates \
+    gnupg \
+    && docker-php-ext-configure gd \
+        --with-freetype \
+        --with-jpeg \
+    && docker-php-ext-install -j$(nproc) \
+        mysqli \
+        pdo_mysql \
+        intl \
+        gd \
+        zip \
+        opcache \
+        xml \
+    && a2enmod rewrite headers expires \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN pecl install uploadprogress apcu \
-    && docker-php-ext-install mysqli opcache intl gd zip \
-    && docker-php-ext-enable uploadprogress apcu
+RUN pecl install apcu uploadprogress \
+    && docker-php-ext-enable apcu uploadprogress \
+    && rm -rf /tmp/pear ~/.pearrc
 
-RUN apk del .build-deps
-
-# Apache config for Drupal
-RUN sed -i 's/#LoadModule rewrite_module/LoadModule rewrite_module/' \
-    /etc/apache2/httpd.conf \
- && sed -i 's/AllowOverride None/AllowOverride All/' \
-    /etc/apache2/httpd.conf
-
-# Security headers
-RUN echo "ServerTokens Prod" >> /etc/apache2/httpd.conf \
- && echo "ServerSignature Off" >> /etc/apache2/httpd.conf \
- && echo 'Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"' >> /etc/apache2/httpd.conf
+RUN sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf \
+ && sed -i 's/ServerTokens OS/ServerTokens Prod/g' /etc/apache2/conf-available/security.conf \
+ && sed -i 's/ServerSignature On/ServerSignature Off/g' /etc/apache2/conf-available/security.conf
 
 # Enable modules
 RUN echo "LoadModule headers_module modules/mod_headers.so" >> /etc/apache2/httpd.conf \
@@ -73,43 +63,36 @@ COPY scripts/deploy.php /usr/local/azure/deploy.php
 
 # Permissions Drupal
 RUN mkdir -p /opt/drupal/sites/default/files \
- && chown -R apache:apache /opt/drupal \
+ && chown -R www-data:www-data /opt/drupal \
  && chmod -R 755 /opt/drupal
+
+WORKDIR /opt/drupal
 
 # SSH
 RUN echo "root:Docker!" | chpasswd
 COPY ./config/sshd_config /etc/ssh/sshd_config
 
-EXPOSE 80 2222
-
-# Azure CLI Alpine install
-RUN apk add --no-cache \
-    python3 \
-    py3-pip \
-    gcc \
-    musl-dev \
-    python3-dev \
-    libffi-dev \
-    openssl-dev
-
-RUN pip3 install --no-cache-dir azure-cli --break-system-packages
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /root/.cache
 
 # MySQL SSL
 ENV DB_SSL=/usr/local/share/ca-certificates/azure-mysql.crt.pem
 
 RUN mkdir -p /usr/local/share/ca-certificates \
- && curl -o /usr/local/share/ca-certificates/azure-mysql.crt.pem \
+    && curl -o /usr/local/share/ca-certificates/azure-mysql.crt.pem \
     https://cacerts.digicert.com/DigiCertGlobalRootG2.crt.pem
 
-# Cron Drupal
-RUN echo "21 * * * * apache drush-www cron >> /var/log/cron.log 2>&1" >> /etc/crontabs/root \
- && touch /var/log/cron.log
+RUN touch /var/log/cron.log \
+ && echo "21 * * * * www-data drush cron >> /var/log/cron.log 2>&1" >> /etc/crontab
 
-# Apache run dir
-RUN mkdir -p /run/apache2
+RUN mkdir -p /var/run/sshd \
+ && echo "root:Docker!" | chpasswd
 
-USER apache
+EXPOSE 80 2222
+
+USER www-data
 
 ENTRYPOINT ["docker-drupal-entrypoint"]
 
-CMD ["/usr/sbin/httpd","-D","FOREGROUND"]
+CMD ["apache2-foreground"]
