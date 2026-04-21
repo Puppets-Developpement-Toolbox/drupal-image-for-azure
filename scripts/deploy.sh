@@ -36,7 +36,7 @@ if [ "$ACTION" = "cim" ]; then
     drush-www config:import -y
 fi
 if [ "$ACTION" = "localupd" ]; then
-    drush-www locale:update
+    drush-www locale:update &
     DRUSH_PID=$!
     while kill -0 $DRUSH_PID 2>/dev/null; do
         echo "... locale update running"
