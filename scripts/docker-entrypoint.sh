@@ -6,7 +6,8 @@ load-azure-secrets
 if [ ! -f /etc/profile.d/azure-env.sh ]; then
   # Retrieve the environment variables to propagate them in cron and the SSH session.
   cat /proc/1/environ | tr '\0' '\n' | grep -v '^$' | \
-    grep -vE '^(PATH|HOME|HOSTNAME|TERM|SHLVL|PWD|_)=' \
+    grep -vE '^(PATH|HOME|HOSTNAME|TERM|SHLVL|PWD|_)=' | \
+    sed 's/"/\\\"/g' | sed '/=/s//="/' | sed 's/$/"/' \
     >> /etc/environment
   ln -s /usr/local/bin/profile-azure-env.sh /etc/profile.d/azure-env.sh
 fi

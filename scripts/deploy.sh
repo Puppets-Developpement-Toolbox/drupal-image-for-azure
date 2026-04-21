@@ -16,7 +16,18 @@ if [ "$ACTION" = "maint1" ]; then
     drush-www maint:set 1
 fi
 if [ "$ACTION" = "dump" ]; then
-    drush-www sql:dump --gzip --result-file=$BASEPATH/storage/premep.sql --structure-tables-list=cache,cache_*
+    # Pour éviter le timeout de Azure
+    drush-www sql:dump --gzip --result-file=$BASEPATH/storage/premep.sql --structure-tables-list=cache,cache_* &
+    DRUSH_PID=$!
+
+    # Keepalive pendant que drush tourne évite le timeout
+    while kill -0 $DRUSH_PID 2>/dev/null; do
+        echo "... dumping"
+        sleep 5
+    done
+
+    # Récupérer le code de retour de drush
+    wait $DRUSH_PID
 fi
 if [ "$ACTION" = "updb" ]; then
     drush-www updatedb
@@ -25,7 +36,13 @@ if [ "$ACTION" = "cim" ]; then
     drush-www config:import -y
 fi
 if [ "$ACTION" = "localupd" ]; then
-    drush-www locale:update
+    drush-www locale:update &
+    DRUSH_PID=$!
+    while kill -0 $DRUSH_PID 2>/dev/null; do
+        echo "... locale update running"
+        sleep 5
+    done
+    wait $DRUSH_PID
 fi
 if [ "$ACTION" = "maint0" ]; then
     drush-www maint:set 0
