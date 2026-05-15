@@ -41,9 +41,28 @@ if [ "${1#-}" != "$1" ] || [ "${1#apache2-foreground}" != "$1" ]; then
   if [ -n "$HTTP_ACCESS_USER" ] && [ -n "$HTTP_ACCESS_PASS" ]; then
     htpasswd -b -c "$BASEPATH/.htpasswd" $HTTP_ACCESS_USER $HTTP_ACCESS_PASS
 
-    # add rule in htpaccess
-    HTACCESS="$BASEPATH/web/.htaccess"
-    cat <<'EOF' >> "$HTACCESS"
+    if [ -n "$HTTP_ACCESS_PAIEMENT" ]; then
+        # add rule in htaccess with paiement method for test
+        HTACCESS="$BASEPATH/web/.htaccess"
+        cat <<'EOF' >> "$HTACCESS"
+# BEGIN AUTH BASIC
+AuthUserFile /opt/drupal/.htpasswd
+AuthName "Accès reservé"
+AuthType Basic
+SetEnvIf Request_URI "^/deploy\.php" deploy
+SetEnvIf Request_URI "^/fr/payment/notify/payzen" payzen_ipn
+SetEnvIf Request_URI "^/en/payment/notify/payzen" payzen_ipn
+SetEnvIf Remote_Addr "^194\.50\.38\." payzen_ip
+
+Require valid-user
+Require env deploy
+Require env payzen_ipn payzen_ip
+# END AUTH BASIC
+EOF
+    else
+        # add rule in htaccess simple
+        HTACCESS="$BASEPATH/web/.htaccess"
+        cat <<'EOF' >> "$HTACCESS"
 # BEGIN AUTH BASIC
 AuthUserFile /opt/drupal/.htpasswd
 AuthName "Accès reservé"
@@ -53,7 +72,7 @@ Require valid-user
 Require env deploy
 # END AUTH BASIC
 EOF
-
+    fi
   fi
 
 
