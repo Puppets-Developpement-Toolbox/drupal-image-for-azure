@@ -21,6 +21,7 @@ Required env :
 - **KEYVAULT** : if set, the name of the Azure Key Vault to fetch secrets from and add them to environment variables
 - **MANAGED_IDENTITY_CLIENT_ID** : if set, the client id of the user assigned managed identity to use for fetching secrets from Key Vault
 - **HTTP_ACCESS_USER and HTTP_ACCESS_PASS** : if both are defined, authentification rules are added to .htaccess file and .htpasswd is added to the Drupal application
+- **HTTP_ACCESS_PAIEMENT_URL and HTTP_ACCESS_PAIEMENT_IP** : if both are defined, authentification rules are added to .htaccess file and .htpasswd is added to the Drupal application with new rule for notification of bank - need HTTP_ACCESS_USER and HTTP_ACCESS_PASS 
 
 Setted env :
 - **DB_SSL**: this variable contains the absolute path to the ssl certificate for database connection
