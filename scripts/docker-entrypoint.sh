@@ -41,21 +41,18 @@ if [ "${1#-}" != "$1" ] || [ "${1#apache2-foreground}" != "$1" ]; then
   if [ -n "$HTTP_ACCESS_USER" ] && [ -n "$HTTP_ACCESS_PASS" ]; then
     htpasswd -b -c "$BASEPATH/.htpasswd" $HTTP_ACCESS_USER $HTTP_ACCESS_PASS
 
-    if [ -n "$HTTP_ACCESS_PAIEMENT_IP" && "$HTTP_ACCESS_PAIEMENT_URL" ]; then
-
-        HTTP_ACCESS_PAIEMENT_IP_ESCAPED=$(echo "$HTTP_ACCESS_PAIEMENT_IP" | sed 's/\./\\./g')
-
+    if [ -n "$HTTP_ACCESS_PAIEMENT" ]; then
         # add rule in htaccess with paiement method for test
         HTACCESS="$BASEPATH/web/.htaccess"
-        cat <<EOF >> "$HTACCESS"
+        cat <<'EOF' >> "$HTACCESS"
 # BEGIN AUTH BASIC
 AuthUserFile /opt/drupal/.htpasswd
 AuthName "Accès reservé"
 AuthType Basic
 SetEnvIf Request_URI "^/deploy\.php" deploy
-SetEnvIf Request_URI "^/fr${HTTP_ACCESS_PAIEMENT_URL}" payzen_ipn
-SetEnvIf Request_URI "^/en${HTTP_ACCESS_PAIEMENT_URL}" payzen_ipn
-SetEnvIf Remote_Addr "^${HTTP_ACCESS_PAIEMENT_IP_ESCAPED}" payzen_ip
+SetEnvIf Request_URI "^/fr/payment/notify/payzen" payzen_ipn
+SetEnvIf Request_URI "^/en/payment/notify/payzen" payzen_ipn
+SetEnvIf Remote_Addr "^194\.50\.38\." payzen_ip
 
 Require valid-user
 Require env deploy
