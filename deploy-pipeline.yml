@@ -1,4 +1,4 @@
-# v20260403 deploy-multistep
+# v20260522 deploy-multistep
 
 parameters:
   - name: group
@@ -17,6 +17,12 @@ parameters:
     type: string
   - name: slackWebhook
     type: string
+  - name: fastDeploy
+    type: boolean
+    default: false
+  - name: keepInMaint
+    type: boolean
+    default: false    
 
 steps:
   - task: CmdLine@2
@@ -108,6 +114,7 @@ steps:
 
   - task: CmdLine@2
     displayName: "Set to maintenance"
+    condition: ${{ eq(parameters.fastDeploy, false) }}
     inputs:
       script: |
         curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=maint1  2>&1 | tee deploy.log
@@ -117,6 +124,7 @@ steps:
 
   - task: CmdLine@2
     displayName: "Run get dump"
+    condition: ${{ eq(parameters.fastDeploy, false) }}
     inputs:
       script: |
         curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=dump  2>&1 | tee deploy.log
@@ -126,6 +134,7 @@ steps:
 
   - task: CmdLine@2
     displayName: "Run update DB"
+    condition: ${{ eq(parameters.fastDeploy, false) }}
     inputs:
       script: |
         curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=updb  2>&1 | tee deploy.log
@@ -135,6 +144,7 @@ steps:
 
   - task: CmdLine@2
     displayName: "Run config import"
+    condition: ${{ eq(parameters.fastDeploy, false) }}
     inputs:
       script: |
         curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=cim  2>&1 | tee deploy.log
@@ -144,6 +154,7 @@ steps:
 
   - task: CmdLine@2
     displayName: "Run local update"
+    condition: ${{ eq(parameters.fastDeploy, false) }}
     inputs:
       script: |
         curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=localupd  2>&1 | tee deploy.log
@@ -166,6 +177,10 @@ steps:
 
   - task: CmdLine@2
     displayName: "Set maintenance to 0"
+    condition: and(
+      eq(${{ parameters.fastDeploy }}, false),
+      eq(${{ parameters.keepInMaint }}, false)
+    )
     inputs:
       script: |
         curl --no-progress-meter https://${{ parameters.appname }}.azurewebsites.net/deploy.php?action=maint0  2>&1 | tee deploy.log
