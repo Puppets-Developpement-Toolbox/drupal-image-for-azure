@@ -12,6 +12,8 @@ This repository contains a Dockerfile for building a Drupal image optimized for 
 - add deploy script (maintenance, dump, updb, cr, cim and rollback)
 - contains azure pipeline template
 - contains rules for .htaccess and htpasswd
+- contains condition for deploy a HotFix rapidely with fastDeploy
+- contains condition for keep the project in maintenance with keepInMaint
 
 
 ## Environment variables
