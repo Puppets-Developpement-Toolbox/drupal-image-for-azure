@@ -1,4 +1,4 @@
-# v20260522 deploy-multistep
+# v20260703 deploy-multistep
 
 parameters:
   - name: group
@@ -17,12 +17,9 @@ parameters:
     type: string
   - name: slackWebhook
     type: string
-  - name: fastDeploy
-    type: boolean
-    default: false
-  - name: keepInMaint
-    type: boolean
-    default: false    
+  - name: skipSteps
+    type: string
+    default: ''
 
 steps:
   - task: CmdLine@2
@@ -80,7 +77,7 @@ steps:
       slotName: staging
       resourceGroupName: ${{ parameters.group }}
       containers: ${{ parameters.acr }}.azurecr.io/${{ parameters.image }}:${{ parameters.commitHash }}
-          
+
 
   - task: AzureCLI@2
     displayName: "ensure staging is started"
@@ -114,7 +111,7 @@ steps:
 
   - task: CmdLine@2
     displayName: "Set to maintenance"
-    condition: ${{ eq(parameters.fastDeploy, false) }}
+    condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'maint1')) }}
     inputs:
       script: |
         curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=maint1  2>&1 | tee deploy.log
@@ -124,7 +121,7 @@ steps:
 
   - task: CmdLine@2
     displayName: "Run get dump"
-    condition: ${{ eq(parameters.fastDeploy, false) }}
+    condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'dump')) }}
     inputs:
       script: |
         curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=dump  2>&1 | tee deploy.log
@@ -134,7 +131,7 @@ steps:
 
   - task: CmdLine@2
     displayName: "Run update DB"
-    condition: ${{ eq(parameters.fastDeploy, false) }}
+    condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'updb')) }}
     inputs:
       script: |
         curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=updb  2>&1 | tee deploy.log
@@ -144,7 +141,7 @@ steps:
 
   - task: CmdLine@2
     displayName: "Run config import"
-    condition: ${{ eq(parameters.fastDeploy, false) }}
+    condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'cim')) }}
     inputs:
       script: |
         curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=cim  2>&1 | tee deploy.log
@@ -154,7 +151,7 @@ steps:
 
   - task: CmdLine@2
     displayName: "Run local update"
-    condition: ${{ eq(parameters.fastDeploy, false) }}
+    condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'localupd')) }}
     inputs:
       script: |
         curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=localupd  2>&1 | tee deploy.log
@@ -177,10 +174,7 @@ steps:
 
   - task: CmdLine@2
     displayName: "Set maintenance to 0"
-    condition: and(
-      eq(${{ parameters.fastDeploy }}, false),
-      eq(${{ parameters.keepInMaint }}, false)
-    )
+    condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'maint0')) }}
     inputs:
       script: |
         curl --no-progress-meter https://${{ parameters.appname }}.azurewebsites.net/deploy.php?action=maint0  2>&1 | tee deploy.log
@@ -190,6 +184,7 @@ steps:
 
   - task: CmdLine@2
     displayName: "Run cache clear"
+    condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'cr')) }}
     inputs:
       script: |
         curl --no-progress-meter https://${{ parameters.appname }}.azurewebsites.net/deploy.php?action=cr  2>&1 | tee deploy.log
@@ -199,6 +194,7 @@ steps:
 
   - task: CmdLine@2
     displayName: "Run version"
+    condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'ver')) }}
     inputs:
       script: |
         curl --no-progress-meter https://${{ parameters.appname }}.azurewebsites.net/deploy.php?action=ver  2>&1 | tee deploy.log
@@ -208,6 +204,7 @@ steps:
 
   - task: CmdLine@2
     displayName: "Delete deployment script"
+    condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'rm')) }}
     inputs:
       script: |
         curl --no-progress-meter https://${{ parameters.appname }}.azurewebsites.net/deploy.php?action=rm  2>&1 | tee deploy.log

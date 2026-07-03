@@ -12,8 +12,10 @@ This repository contains a Dockerfile for building a Drupal image optimized for 
 - add deploy script (maintenance, dump, updb, cr, cim and rollback)
 - contains azure pipeline template
 - contains rules for .htaccess and htpasswd
-- contains condition for deploy a HotFix rapidely with fastDeploy
-- contains condition for keep the project in maintenance with keepInMaint
+- Now is possible to use skipSteps with step1,step2 for skip them 
+- To deploy a HotFix rapidely with skipSteps, use like that : maint1,maint0, and skip other steps you want
+- To deploy the project and keep it into online with skipSteps, use like that : maint1,maintO . maint0 is no required
+- To deploy the project and keep it into maintenance with skipSteps, use like that : maint0 
 
 
 ## Environment variables
