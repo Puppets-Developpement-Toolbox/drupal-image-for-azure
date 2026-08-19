@@ -1,4 +1,4 @@
-# v20260703 deploy-multistep
+# v20260819 deploy-multistep
 
 parameters:
   - name: group
@@ -188,16 +188,6 @@ steps:
     inputs:
       script: |
         curl --no-progress-meter https://${{ parameters.appname }}.azurewebsites.net/deploy.php?action=cr  2>&1 | tee deploy.log
-        if ! grep -q "DEPLOY OK" "deploy.log"; then
-          exit 1
-        fi
-
-  - task: CmdLine@2
-    displayName: "Run version"
-    condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'ver')) }}
-    inputs:
-      script: |
-        curl --no-progress-meter https://${{ parameters.appname }}.azurewebsites.net/deploy.php?action=ver  2>&1 | tee deploy.log
         if ! grep -q "DEPLOY OK" "deploy.log"; then
           exit 1
         fi

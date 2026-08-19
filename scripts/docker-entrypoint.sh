@@ -58,12 +58,12 @@ EOF
 
 
 
-  # get last deployed version
-  if [ -f $BASEPATH/storage/private/deployed_version ]; then
-    DEPLOYED_VERSION="$(cat $BASEPATH/storage/private/deployed_version)"
+  # get last deployed step
+  if [ -f $BASEPATH/storage/private/deployed_step ]; then
+    DEPLOYED_STEP="$(cat $BASEPATH/storage/private/deployed_step)"
   fi
 
-  if [ "$DEPLOYED_VERSION" != "rm-$APP_VERSION" ]
+  if [ "$DEPLOYED_STEP" != "rm-$APP_VERSION" ]
   then
     # let php run the deploy script from http request
     cp /usr/local/azure/deploy.php $BASEPATH/web/deploy.php
