@@ -59,3 +59,5 @@ fi
 if [ "$ACTION" = "rm" ]; then
     rm $BASEPATH/web/deploy.php
 fi
+
+echo "$ACTION-$APP_VERSION" > $BASEPATH/storage/private/deployed_version
