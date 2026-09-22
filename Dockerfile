@@ -1,4 +1,4 @@
-FROM drupal:10-php8.3-apache-bookworm
+FROM drupal:11-php8.4-apache-bookworm
 
 # rm drupal
 RUN rm -rf /opt/drupal && mkdir /opt/drupal
