@@ -4,7 +4,7 @@ name: Create and publish a Docker image
 
 on:
   push:
-    branches: ['main', 'azure-pipeline', 'deploy-multistep']
+    branches: ['main', 'azure-pipeline', 'deploy-multistep', 'deploy-multistep-drupal11']
 
 env:
   REGISTRY: ghcr.io
