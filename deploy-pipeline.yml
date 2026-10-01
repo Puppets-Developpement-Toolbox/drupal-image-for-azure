@@ -1,4 +1,4 @@
-# v20260819 deploy-multistep
+# v20261001 deploy-multistep-drupal11
 
 parameters:
   - name: group
@@ -27,6 +27,19 @@ steps:
     inputs:
       script: |
         docker system prune --all --force --volumes
+
+  - task: CmdLine@2
+    displayName: "Install composer deps (private repos)"
+    env:
+      GITHUB_TOKEN: $(GITHUB_TOKEN)
+    inputs:
+      script: |
+        SCRIPT=./scripts/composer-install-for-build.sh
+        if [ ! -f "$SCRIPT" ]; then
+          echo "##vso[task.logissue type=error]You forgot to copy the composer script file ($SCRIPT) into this project."
+          exit 1
+        fi
+        sh "$SCRIPT"
 
   - task: Docker@0
     displayName: Build
