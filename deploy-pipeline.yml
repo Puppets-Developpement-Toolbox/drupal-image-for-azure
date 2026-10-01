@@ -28,7 +28,6 @@ steps:
       script: |
         docker system prune --all --force --volumes
 
-  - checkout: self
   - task: Docker@0
     displayName: Build
     inputs:
@@ -115,6 +114,16 @@ steps:
     inputs:
       script: |
         curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=maint1  2>&1 | tee deploy.log
+        if ! grep -q "DEPLOY OK" "deploy.log"; then
+          exit 1
+        fi
+
+  - task: CmdLine@2
+    displayName: "Run cache clear"
+    condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'cr')) }}
+    inputs:
+      script: |
+        curl --no-progress-meter https://${{ parameters.appname }}.azurewebsites.net/deploy.php?action=cr  2>&1 | tee deploy.log
         if ! grep -q "DEPLOY OK" "deploy.log"; then
           exit 1
         fi

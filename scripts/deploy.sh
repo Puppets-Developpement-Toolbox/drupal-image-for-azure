@@ -14,7 +14,6 @@ BASEPATH=/opt/drupal
 
 if [ "$ACTION" = "maint1" ]; then
     drush-www maint:set 1
-    drush-www cache:rebuild
 fi
 if [ "$ACTION" = "dump" ]; then
     # Pour éviter le timeout de Azure

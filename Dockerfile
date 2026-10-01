@@ -33,8 +33,8 @@ RUN mkdir /usr/local/azure
 COPY scripts/deploy.php /usr/local/azure/deploy.php
 
 # Start and enable SSH
-RUN apt-get update
-RUN apt-get install -y --no-install-recommends jq \
+RUN apt-get update -qq
+RUN apt-get install -qq -y --no-install-recommends jq \
     cron dialog openssh-server git mariadb-client parallel
 RUN echo "root:Docker!" | chpasswd
 COPY ./config/sshd_config /etc/ssh/
