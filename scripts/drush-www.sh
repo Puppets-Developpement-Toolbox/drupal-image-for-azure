@@ -2,6 +2,11 @@
 
 set -e
 
+# load container env (cron and SSH sessions don't inherit it), see docker-entrypoint
+if [ -r /etc/azure-env.sh ]; then
+  . /etc/azure-env.sh
+fi
+
 BASEPATH=/opt/drupal
 USER=www-data
 

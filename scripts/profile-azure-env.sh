@@ -1,6 +1,4 @@
 
-if [ -f /etc/environment ]; then
-  set -a
-  . /etc/environment
-  set +a
+if [ -r /etc/azure-env.sh ]; then
+  . /etc/azure-env.sh
 fi

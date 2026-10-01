@@ -3,13 +3,14 @@ set -e
 
 load-azure-secrets
 
-if [ ! -f /etc/profile.d/azure-env.sh ]; then
-  # Retrieve the environment variables to propagate them in cron and the SSH session.
-  printenv | \
-    grep -vE '^(PATH|HOME|HOSTNAME|TERM|SHLVL|PWD|_)=' | \
-    sed 's/"/\\\"/g' | sed '/=/s//="/' | sed 's/$/"/' \
-    >> /etc/environment
-  ln -s /usr/local/bin/profile-azure-env.sh /etc/profile.d/azure-env.sh
+if [ ! -f /etc/azure-env.sh ]; then
+  # Retrieve the environment variables to propagate them in cron, drush-www and the SSH session.
+  # `export -p` quotes values safely ($, ", \ ...). Not written to /etc/environment:
+  # pam_env (su, cron, sshd) reads that file without unescaping and corrupts the values.
+  export -p | grep -vE '^export (PATH|HOME|HOSTNAME|TERM|SHLVL|PWD|OLDPWD|USER|LOGNAME|_)=' > /etc/azure-env.sh
+  chown root:www-data /etc/azure-env.sh
+  chmod 640 /etc/azure-env.sh
+  ln -sf /usr/local/bin/profile-azure-env.sh /etc/profile.d/azure-env.sh
 fi
 
 
