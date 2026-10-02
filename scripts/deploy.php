@@ -41,7 +41,7 @@ function run($cmd)
 $cmd = ["drupal-deploy"];
 if(!empty($_GET['action'])){
     $get = $_GET['action'];
-    if(in_array($get, ['maint0', 'maint1', 'dump', 'updb', 'cim', 'localupd', 'cr', 'ver', 'rm'])){
+    if(in_array($get, ['maint0', 'maint1', 'dump', 'updb', 'cim', 'localupd', 'cr', 'ver', 'rm', 'deploy-sites', 'release-sites'])){
         $cmd[] = $get;
     }
 }
