@@ -1,4 +1,4 @@
-# v20261001 deploy-multistep-drupal11
+# v20261006 deploy-multistep-drupal11
 
 parameters:
   - name: group
@@ -132,16 +132,6 @@ steps:
         fi
 
   - task: CmdLine@2
-    displayName: "Run cache clear"
-    condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'cr')) }}
-    inputs:
-      script: |
-        curl --no-progress-meter https://${{ parameters.appname }}.azurewebsites.net/deploy.php?action=cr  2>&1 | tee deploy.log
-        if ! grep -q "DEPLOY OK" "deploy.log"; then
-          exit 1
-        fi
-
-  - task: CmdLine@2
     displayName: "Run get dump"
     condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'dump')) }}
     inputs:
@@ -238,26 +228,38 @@ steps:
 
   - task: AzureCli@2
     displayName: "notify"
+    env:
+      SLACK_WEBHOOK: ${{ parameters.slackWebhook }}
     inputs:
       azureSubscription: ${{ parameters.subscription }}
       scriptType: "bash"
       scriptLocation: "inlineScript"
       inlineScript: |
+        case "$SLACK_WEBHOOK" in
+          https://*) ;;
+          *) echo "##vso[task.logissue type=warning]Variable slackWebhook absente ou inaccessible : notification Slack ignorée."; exit 0 ;;
+        esac
         MSG=$(echo "$(Build.SourceVersionMessage)" | tr -d "'")
         curl -X POST -H 'Content-type: application/json' \
           --data "{\"text\":\"Site déployé en ${{replace(variables['Build.SourceBranch'], 'refs/heads/', '') }} version ${{ parameters.commitHash }}\n${MSG}\"}" \
-          ${{ parameters.slackWebhook }}
+          "$SLACK_WEBHOOK"
 
   - task: AzureCli@2
     displayName: "Send Slack notification on failure"
+    env:
+      SLACK_WEBHOOK: ${{ parameters.slackWebhook }}
     condition: or(failed(), canceled())
     inputs:
       azureSubscription: ${{ parameters.subscription }}
       scriptType: "bash"
       scriptLocation: "inlineScript"
       inlineScript: |
+        case "$SLACK_WEBHOOK" in
+          https://*) ;;
+          *) echo "##vso[task.logissue type=warning]Variable slackWebhook absente ou inaccessible : notification Slack ignorée."; exit 0 ;;
+        esac
         MSG=$(echo "$(Build.SourceVersionMessage)" | tr -d "'")
         curl -X POST -H 'Content-type: application/json' \
           --data "{\"text\":\"Pipeline $(Build.DefinitionName) for ${MSG} failed. See details: $(Build.BuildUri)\"}" \
-          ${{ parameters.slackWebhook }}
+          "$SLACK_WEBHOOK"
       waitForCompletion: "false"
