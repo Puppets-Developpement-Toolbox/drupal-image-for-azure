@@ -1,4 +1,4 @@
-# v20261006 deploy-multistep-drupal11
+# v20261008 deploy-multistep-drupal11
 
 parameters:
   - name: group
@@ -20,26 +20,61 @@ parameters:
   - name: skipSteps
     type: string
     default: ''
+  - name: baseVersion
+    type: string
+    default: deploy-multistep-drupal11
 
 steps:
   - task: CmdLine@2
     displayName: "Clean builder"
     inputs:
       script: |
+        echo "=== Disque avant nettoyage ==="
+        df -h "$(Agent.WorkFolder)" /var/lib/docker 2>/dev/null || df -h
+        docker system df
         docker system prune --all --force --volumes
+        echo "=== Disque après nettoyage ==="
+        df -h "$(Agent.WorkFolder)" /var/lib/docker 2>/dev/null || df -h
+        docker system df
 
   - task: CmdLine@2
     displayName: "Install composer deps (private repos)"
     env:
       GITHUB_TOKEN: $(GITHUB_TOKEN)
+      BASE_VERSION: ${{ parameters.baseVersion }}
     inputs:
       script: |
-        SCRIPT=./scripts/composer-install-for-build.sh
-        if [ ! -f "$SCRIPT" ]; then
-          echo "##vso[task.logissue type=error]You forgot to copy the composer script file ($SCRIPT) into this project."
+        # Unresolved variable stays as a literal macro string (dollar, parenthesis,
+        # name); never write the full macro here or Azure substitutes the secret.
+        case "$GITHUB_TOKEN" in
+        ""|'$('*)
+          echo "##vso[task.logissue type=error]GITHUB_TOKEN variable is not defined in the pipeline (required for composer private repos)." >&2
+          exit 1
+          ;;
+        esac
+        # Header sent via stdin (printf is a builtin): token stays out of ps.
+        HTTP_CODE=$(printf 'Authorization: Bearer %s\n' "$GITHUB_TOKEN" | \
+          curl -s -o /dev/null -w '%{http_code}' -H @- \
+          https://api.github.com/user) || HTTP_CODE=000
+        if [ "$HTTP_CODE" != "200" ]; then
+          echo "##vso[task.logissue type=error]GITHUB_TOKEN is invalid or expired (GitHub API returned HTTP $HTTP_CODE)." >&2
           exit 1
         fi
-        sh "$SCRIPT"
+        BASE_IMAGE="ghcr.io/puppets-developpement-toolbox/drupal-azure-base:$BASE_VERSION"
+        COMPOSER_CACHE="${AGENT_WORKFOLDER:-$HOME}/.cache/composer-build"
+        mkdir -p "$COMPOSER_CACHE"
+        # Passed by name only: keeps the token out of the process list.
+        export COMPOSER_AUTH="{\"github-oauth\":{\"github.com\":\"$GITHUB_TOKEN\"}}"
+        docker run --rm \
+          --user "$(id -u):$(id -g)" \
+          --entrypoint composer \
+          -e HOME=/tmp \
+          -v "$PWD:/build" -w /build \
+          -v "$COMPOSER_CACHE:/tmp/composer-cache" \
+          -e COMPOSER_CACHE_DIR=/tmp/composer-cache \
+          -e COMPOSER_AUTH \
+          "$BASE_IMAGE" \
+          install --no-dev -o --no-progress --prefer-dist
 
   - task: Docker@0
     displayName: Build
@@ -56,6 +91,7 @@ steps:
       timeout: "0"
       buildArguments: |
         APP_VERSION=${{ parameters.commitHash }}
+        BASE_VERSION=${{ parameters.baseVersion }}
 
   - task: Docker@0
     displayName: "Push an image"
@@ -127,6 +163,16 @@ steps:
     inputs:
       script: |
         curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=maint1  2>&1 | tee deploy.log
+        if ! grep -q "DEPLOY OK" "deploy.log"; then
+          exit 1
+        fi
+
+  - task: CmdLine@2
+    displayName: "Run cache clear"
+    condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'cr')) }}
+    inputs:
+      script: |
+        curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=cr  2>&1 | tee deploy.log
         if ! grep -q "DEPLOY OK" "deploy.log"; then
           exit 1
         fi
@@ -237,7 +283,8 @@ steps:
       inlineScript: |
         case "$SLACK_WEBHOOK" in
           https://*) ;;
-          *) echo "##vso[task.logissue type=warning]Variable slackWebhook absente ou inaccessible : notification Slack ignorée."; exit 0 ;;
+          \$\(*) echo "##vso[task.logissue type=warning]slackWebhook non définie pour cette pipeline (nom, emplacement, variable group ou rerun d'un ancien run) : notification Slack ignorée."; exit 0 ;;
+          *) echo "##vso[task.logissue type=warning]slackWebhook définie mais invalide (longueur ${#SLACK_WEBHOOK}, doit commencer par https://) : notification Slack ignorée."; exit 0 ;;
         esac
         MSG=$(echo "$(Build.SourceVersionMessage)" | tr -d "'")
         curl -X POST -H 'Content-type: application/json' \
@@ -256,7 +303,8 @@ steps:
       inlineScript: |
         case "$SLACK_WEBHOOK" in
           https://*) ;;
-          *) echo "##vso[task.logissue type=warning]Variable slackWebhook absente ou inaccessible : notification Slack ignorée."; exit 0 ;;
+          \$\(*) echo "##vso[task.logissue type=warning]slackWebhook non définie pour cette pipeline (nom, emplacement, variable group ou rerun d'un ancien run) : notification Slack ignorée."; exit 0 ;;
+          *) echo "##vso[task.logissue type=warning]slackWebhook définie mais invalide (longueur ${#SLACK_WEBHOOK}, doit commencer par https://) : notification Slack ignorée."; exit 0 ;;
         esac
         MSG=$(echo "$(Build.SourceVersionMessage)" | tr -d "'")
         curl -X POST -H 'Content-type: application/json' \
