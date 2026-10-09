@@ -11,6 +11,13 @@ use Symfony\Component\Process\Process;
 // HEAD verb is used to check if the endpoint is available
 if ($_SERVER['REQUEST_METHOD'] === 'HEAD' || isset($_GET['healthcheck'])) return;
 
+$attendu = getenv('DEPLOY_TOKEN');
+$recu = $_SERVER['HTTP_X_DEPLOY_TOKEN'] ?? '';
+if ($attendu === false || $attendu === '' || !hash_equals($attendu, $recu)) {
+    http_response_code(403);
+    exit; 
+}
+
 require_once "autoload.php";
 header("Content-Type: text/event-stream");
 header("Cache-Control: no-cache");
