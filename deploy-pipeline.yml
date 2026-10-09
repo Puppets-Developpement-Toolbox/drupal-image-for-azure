@@ -1,4 +1,4 @@
-# v20261008 deploy-multistep-drupal11
+# v20261009 deploy-multistep-drupal11
 
 parameters:
   - name: group
@@ -22,7 +22,25 @@ parameters:
     default: ''
   - name: baseVersion
     type: string
-    default: deploy-multistep-drupal11
+    default: deploy-multistep-drupal11@sha256:ae63b184c54af114b5e36c43361df1c767ff8fcebcfcfbef9ba2692b1a7ee78e
+  # Séquence deploy.php, dans l'ordre. slots : premier slot qui répond
+  # « DEPLOY OK ». skip : nom à donner dans skipSteps (par défaut l'action).
+  - name: deploySteps
+    type: object
+    default:
+      - { action: maint1, slots: [staging], label: "Set to maintenance" }
+      - { action: cr, slots: [staging], label: "Run cache clear" }
+      - { action: dump, slots: [staging], label: "Run get dump" }
+      - { action: updb, slots: [staging], label: "Run update DB" }
+      - { action: cim, slots: [staging], label: "Run config import" }
+      - { action: localupd, slots: [staging], label: "Run local update" }
+      - { action: swap, label: "Swap slots" }
+      - { action: maint0, slots: [production], label: "Set maintenance to 0" }
+      - { action: cr, slots: [production], label: "Run cache clear" }
+      - { action: rm, slots: [production], label: "Delete deployment script" }
+      # Échec ou annulation : base partagée entre les slots, la prod resterait en
+      # maintenance. Le slot staging garde deploy.php tant qu'il n'a pas été basculé.
+      - { action: maint0, slots: [staging, production], label: "Leave maintenance after failure", skip: maint1, when: "or(failed(), canceled())" }
 
 steps:
   - task: CmdLine@2
@@ -142,126 +160,70 @@ steps:
 
   - task: CmdLine@2
     displayName: "wait for staging to be up"
+    env:
+      DEPLOY_TOKEN: $(DEPLOY_TOKEN)
+      HOST: ${{ parameters.appname }}-staging.azurewebsites.net
     inputs:
       script: |
-        HTTPD=`curl -A "Web Check" -sL --connect-timeout 3 -w "%{http_code}\n" --head "https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?healthcheck" -o /dev/null`
-        TRY=0
-        until [ "$HTTPD" == "200" ]; do
-          if [ $TRY -gt 10 ]; then
-            echo "Site not reachable"
-            exit 1
-          fi
+        # 12 essais espacés de 3 s. En-tête lu sur stdin : jeton hors de la liste des processus.
+        # Pas de -L : curl renverrait X-Deploy-Token à l'hôte cible d'une redirection.
+        for TRY in $(seq 12); do
+          HTTPD=$(printf 'X-Deploy-Token: %s\n' "$DEPLOY_TOKEN" | \
+            curl -A "Web Check" -s --connect-timeout 3 -w "%{http_code}" --head -H @- -o /dev/null \
+            "https://$HOST/deploy.php?healthcheck")
+          [ "$HTTPD" = "200" ] && exit 0
           printf '.'
           sleep 3
-          HTTPD=`curl -A "Web Check" -sL --connect-timeout 3 -w "%{http_code}\n" --head "https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?healthcheck" -o /dev/null`
-          TRY=$((TRY+1))
         done
+        echo "Site not reachable (HTTP $HTTPD, 403 = jeton DEPLOY_TOKEN refusé)"
+        exit 1
 
-  - task: CmdLine@2
-    displayName: "Set to maintenance"
-    condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'maint1')) }}
-    inputs:
-      script: |
-        curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=maint1  2>&1 | tee deploy.log
-        if ! grep -q "DEPLOY OK" "deploy.log"; then
-          exit 1
-        fi
-
-  - task: CmdLine@2
-    displayName: "Run cache clear"
-    condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'cr')) }}
-    inputs:
-      script: |
-        curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=cr  2>&1 | tee deploy.log
-        if ! grep -q "DEPLOY OK" "deploy.log"; then
-          exit 1
-        fi
-
-  - task: CmdLine@2
-    displayName: "Run get dump"
-    condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'dump')) }}
-    inputs:
-      script: |
-        curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=dump  2>&1 | tee deploy.log
-        if ! grep -q "DEPLOY OK" "deploy.log"; then
-          exit 1
-        fi
-
-  - task: CmdLine@2
-    displayName: "Run update DB"
-    condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'updb')) }}
-    inputs:
-      script: |
-        curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=updb  2>&1 | tee deploy.log
-        if ! grep -q "DEPLOY OK" "deploy.log"; then
-          exit 1
-        fi
-
-  - task: CmdLine@2
-    displayName: "Run config import"
-    condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'cim')) }}
-    inputs:
-      script: |
-        curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=cim  2>&1 | tee deploy.log
-        if ! grep -q "DEPLOY OK" "deploy.log"; then
-          exit 1
-        fi
-
-  - task: CmdLine@2
-    displayName: "Run local update"
-    condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'localupd')) }}
-    inputs:
-      script: |
-        curl --no-progress-meter https://${{ parameters.appname }}-staging.azurewebsites.net/deploy.php?action=localupd  2>&1 | tee deploy.log
-        if ! grep -q "DEPLOY OK" "deploy.log"; then
-          exit 1
-        fi
-
-  - task: AzureCLI@2
-    displayName: "Swap slots"
-    inputs:
-      azureSubscription: ${{ parameters.subscription }}
-      scriptType: "bash"
-      scriptLocation: "inlineScript"
-      inlineScript: |
-        az webapp deployment slot swap \
-          -g ${{ parameters.group }} \
-          -n ${{ parameters.appname }} \
-          --slot staging \
-          --target-slot production
-
-  - task: CmdLine@2
-    displayName: "Set maintenance to 0"
-    condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'maint0')) }}
-    inputs:
-      script: |
-        curl --no-progress-meter https://${{ parameters.appname }}.azurewebsites.net/deploy.php?action=maint0  2>&1 | tee deploy.log
-        if ! grep -q "DEPLOY OK" "deploy.log"; then
-          exit 1
-        fi
-
-  - task: CmdLine@2
-    displayName: "Run cache clear"
-    condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'cr')) }}
-    inputs:
-      script: |
-        curl --no-progress-meter https://${{ parameters.appname }}.azurewebsites.net/deploy.php?action=cr  2>&1 | tee deploy.log
-        if ! grep -q "DEPLOY OK" "deploy.log"; then
-          exit 1
-        fi
-
-  - task: CmdLine@2
-    displayName: "Delete deployment script"
-    condition: ${{ not(containsValue(split(parameters.skipSteps, ','), 'rm')) }}
-    inputs:
-      script: |
-        curl --no-progress-meter https://${{ parameters.appname }}.azurewebsites.net/deploy.php?action=rm  2>&1 | tee deploy.log
-        if ! grep -q "DEPLOY OK" "deploy.log"; then
-          exit 1
-        fi
+  # Jeton DEPLOY_TOKEN (variable secrète Azure DevOps) envoyé en en-tête X-Deploy-Token.
+  - ${{ each step in parameters.deploySteps }}:
+    - ${{ if eq(step.action, 'swap') }}:
+      - task: AzureCLI@2
+        displayName: ${{ step.label }}
+        inputs:
+          azureSubscription: ${{ parameters.subscription }}
+          scriptType: "bash"
+          scriptLocation: "inlineScript"
+          inlineScript: |
+            az webapp deployment slot swap \
+              -g ${{ parameters.group }} \
+              -n ${{ parameters.appname }} \
+              --slot staging \
+              --target-slot production
+    - ${{ else }}:
+      - task: CmdLine@2
+        displayName: ${{ step.label }}
+        condition: and(${{ coalesce(step.when, 'succeeded()') }}, ${{ not(containsValue(split(parameters.skipSteps, ','), coalesce(step.skip, step.action))) }})
+        env:
+          DEPLOY_TOKEN: $(DEPLOY_TOKEN)
+          APPNAME: ${{ parameters.appname }}
+          SLOTS: ${{ join(' ', step.slots) }}
+          ACTION: ${{ step.action }}
+        inputs:
+          script: |
+            case "$DEPLOY_TOKEN" in
+              ""|'$('*)
+                echo "##vso[task.logissue type=warning]DEPLOY_TOKEN non défini : deploy.php appelé sans jeton."
+                DEPLOY_TOKEN=""
+                ;;
+            esac
+            for SLOT in $SLOTS; do
+              HOST=$APPNAME
+              [ "$SLOT" = production ] || HOST="$HOST-$SLOT"
+              # En-tête lu sur stdin (printf est un builtin) : jeton hors de la liste des processus et des logs.
+              printf 'X-Deploy-Token: %s\n' "$DEPLOY_TOKEN" | \
+                curl --no-progress-meter -H @- "https://$HOST.azurewebsites.net/deploy.php?action=$ACTION" 2>&1 | tee deploy.log
+              grep -q "DEPLOY OK" deploy.log && exit 0
+            done
+            exit 1
 
   - task: AzureCLI@2
     displayName: "ensure staging is stopped"
+    # Même après un échec : le slot staging ne reste pas en ligne avec deploy.php.
+    condition: always()
     inputs:
       azureSubscription: ${{ parameters.subscription }}
       scriptType: "bash"
@@ -276,6 +238,8 @@ steps:
     displayName: "notify"
     env:
       SLACK_WEBHOOK: ${{ parameters.slackWebhook }}
+      # Message de commit passé par l'environnement : jamais interprété par bash.
+      COMMIT_MESSAGE: $(Build.SourceVersionMessage)
     inputs:
       azureSubscription: ${{ parameters.subscription }}
       scriptType: "bash"
@@ -286,7 +250,12 @@ steps:
           \$\(*) echo "##vso[task.logissue type=warning]slackWebhook non définie pour cette pipeline (nom, emplacement, variable group ou rerun d'un ancien run) : notification Slack ignorée."; exit 0 ;;
           *) echo "##vso[task.logissue type=warning]slackWebhook définie mais invalide (longueur ${#SLACK_WEBHOOK}, doit commencer par https://) : notification Slack ignorée."; exit 0 ;;
         esac
-        MSG=$(echo "$(Build.SourceVersionMessage)" | tr -d "'")
+        # Échappement JSON (antislash, guillemet, retours ligne, tabulation).
+        MSG=${COMMIT_MESSAGE//\\/\\\\}
+        MSG=${MSG//\"/\\\"}
+        MSG=${MSG//$'\r'/}
+        MSG=${MSG//$'\n'/\\n}
+        MSG=${MSG//$'\t'/\\t}
         curl -X POST -H 'Content-type: application/json' \
           --data "{\"text\":\"Site déployé en ${{replace(variables['Build.SourceBranch'], 'refs/heads/', '') }} version ${{ parameters.commitHash }}\n${MSG}\"}" \
           "$SLACK_WEBHOOK"
@@ -295,6 +264,8 @@ steps:
     displayName: "Send Slack notification on failure"
     env:
       SLACK_WEBHOOK: ${{ parameters.slackWebhook }}
+      # Message de commit passé par l'environnement : jamais interprété par bash.
+      COMMIT_MESSAGE: $(Build.SourceVersionMessage)
     condition: or(failed(), canceled())
     inputs:
       azureSubscription: ${{ parameters.subscription }}
@@ -306,7 +277,12 @@ steps:
           \$\(*) echo "##vso[task.logissue type=warning]slackWebhook non définie pour cette pipeline (nom, emplacement, variable group ou rerun d'un ancien run) : notification Slack ignorée."; exit 0 ;;
           *) echo "##vso[task.logissue type=warning]slackWebhook définie mais invalide (longueur ${#SLACK_WEBHOOK}, doit commencer par https://) : notification Slack ignorée."; exit 0 ;;
         esac
-        MSG=$(echo "$(Build.SourceVersionMessage)" | tr -d "'")
+        # Échappement JSON (antislash, guillemet, retours ligne, tabulation).
+        MSG=${COMMIT_MESSAGE//\\/\\\\}
+        MSG=${MSG//\"/\\\"}
+        MSG=${MSG//$'\r'/}
+        MSG=${MSG//$'\n'/\\n}
+        MSG=${MSG//$'\t'/\\t}
         curl -X POST -H 'Content-type: application/json' \
           --data "{\"text\":\"Pipeline $(Build.DefinitionName) for ${MSG} failed. See details: $(Build.BuildUri)\"}" \
           "$SLACK_WEBHOOK"
