@@ -40,9 +40,13 @@ function run($cmd)
 
 $cmd = ["drupal-deploy"];
 if(!empty($_GET['action'])){
-    $get = $_GET['action'];
-    if(in_array($get, ['maint0', 'maint1', 'dump', 'updb', 'cim', 'localupd', 'cr', 'ver', 'rm', 'deploy-sites', 'release-sites', 'site-list', 'deploy-site', 'open-site'])){
-        $cmd[] = $get;
+    $action = $_GET['action'];
+    if($action) {
+        if (!preg_match('/^[a-z0-9.-]+$/', $action) {
+            throw new Exception("Invalid action");
+        }
+        
+        $cmd[] = $action;
         // Site facultatif : le domaine est passé en argument à drupal-deploy
         // (tableau Process, pas de shell), après validation stricte.
         if(isset($_GET['site'])){
