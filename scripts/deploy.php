@@ -42,7 +42,7 @@ $cmd = ["drupal-deploy"];
 if(!empty($_GET['action'])){
     $action = $_GET['action'];
     if($action) {
-        if (!preg_match('/^[a-z0-9.-]+$/', $action) {
+        if (!preg_match('/^[a-z0-9.-]+$/', $action)) {
             throw new Exception("Invalid action");
         }
         
