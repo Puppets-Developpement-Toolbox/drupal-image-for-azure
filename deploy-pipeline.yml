@@ -38,9 +38,6 @@ parameters:
       - { action: maint0, slots: [production], label: "Set maintenance to 0" }
       - { action: cr, slots: [production], label: "Run cache clear" }
       - { action: rm, slots: [production], label: "Delete deployment script" }
-      # Échec ou annulation : base partagée entre les slots, la prod resterait en
-      # maintenance. Le slot staging garde deploy.php tant qu'il n'a pas été basculé.
-      - { action: maint0, slots: [staging, production], label: "Leave maintenance after failure", skip: maint1, when: "or(failed(), canceled())" }
 
 steps:
   - task: CmdLine@2
