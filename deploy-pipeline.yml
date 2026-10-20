@@ -222,8 +222,6 @@ steps:
 
   - task: AzureCLI@2
     displayName: "ensure staging is stopped"
-    # Même après un échec : le slot staging ne reste pas en ligne avec deploy.php.
-    condition: always()
     inputs:
       azureSubscription: ${{ parameters.subscription }}
       scriptType: "bash"
