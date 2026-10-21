@@ -4,6 +4,7 @@ FROM drupal:10-php8.3-apache-bookworm
 RUN rm -rf /opt/drupal && mkdir /opt/drupal
 WORKDIR /opt/drupal
 
+
 # secure
 RUN sed -i 's/ServerTokens OS/ServerTokens Prod/g' /etc/apache2/conf-enabled/security.conf
 RUN sed -i 's/ServerSignature On/ServerSignature Off/g' /etc/apache2/conf-enabled/security.conf
