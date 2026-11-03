@@ -162,6 +162,12 @@ steps:
       HOST: ${{ parameters.appname }}-staging.azurewebsites.net
     inputs:
       script: |
+        case "$DEPLOY_TOKEN" in
+        ""|'$('*)
+          echo "##vso[task.logissue type=error]DEPLOY_TOKEN variable is not defined in the pipeline (required by deploy.php)." >&2
+          exit 1
+          ;;
+        esac
         # 12 essais espacés de 3 s. En-tête lu sur stdin : jeton hors de la liste des processus.
         # Pas de -L : curl renverrait X-Deploy-Token à l'hôte cible d'une redirection.
         for TRY in $(seq 12); do
