@@ -1,11 +1,21 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
+# Dependabot reads this file from the default branch (main) only.
+# Each target branch has its own Dockerfile (Drupal 10 vs 11), hence one entry per branch.
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
 version: 2
 updates:
-  - package-ecosystem: "docker" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "docker"
+    directory: "/"
+    target-branch: "deploy-multistep"
     schedule:
-      interval: "weekly"
+      interval: "daily"
+    ignore:
+      # Drupal 10 branch: never propose drupal:11 here (migration is done on deploy-multistep-drupal11)
+      - dependency-name: "drupal"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    target-branch: "deploy-multistep-drupal11"
+    schedule:
+      interval: "daily"

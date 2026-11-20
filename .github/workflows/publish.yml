@@ -5,6 +5,9 @@ name: Create and publish a Docker image
 on:
   push:
     branches: ['main', 'azure-pipeline', 'deploy-multistep', 'deploy-multistep-drupal11']
+  # Build + smoke test only (no push) on PRs; Dependabot PRs are then auto-merged (job below)
+  pull_request:
+    branches: ['deploy-multistep', 'deploy-multistep-drupal11']
 
 env:
   REGISTRY: ghcr.io
@@ -23,6 +26,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Log in to the Container registry
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
         with:
           registry: ${{ env.REGISTRY }}
@@ -35,18 +39,57 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
+      # Build locally first and smoke test it: nothing reaches the registry if the image is broken.
+      - name: Build image for smoke test
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        with:
+          context: .
+          load: true
+          tags: drupal-azure:smoke
+
+      - name: Smoke test
+        run: bash .github/smoke-test.sh drupal-azure:smoke
+
       - name: Build and push Docker image
         id: push
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
         with:
           context: .
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Generate artifact attestation
+        if: github.event_name != 'pull_request'
         uses: actions/attest-build-provenance@v1
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
+
+  # Dependabot PRs: merged only once build + smoke test above are green (needs).
+  # The merge (push) then re-runs this workflow, which publishes the new image.
+  auto-merge:
+    needs: build-and-push-image
+    if: github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Patch, minor and digest-only updates are merged. Major updates (e.g. drupal 11 -> 12) stay manual.
+      - name: Merge
+        if: steps.meta.outputs.update-type != 'version-update:semver-major'
+        run: gh pr merge --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          # Not GITHUB_TOKEN: a merge done with GITHUB_TOKEN does not trigger the push
+          # event, so the image would never be rebuilt.
+          # Fine-grained PAT (contents + pull-requests: write), stored as a *Dependabot* secret.
+          GH_TOKEN: ${{ secrets.DEPENDABOT_AUTOMERGE_TOKEN }}
