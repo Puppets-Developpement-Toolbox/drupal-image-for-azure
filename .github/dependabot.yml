@@ -9,6 +9,9 @@ updates:
     target-branch: "deploy-multistep"
     schedule:
       interval: "daily"
+    # Default Dependabot cooldown delays freshly republished images. TEMP 0 to test the chain; set back to 1 after.
+    cooldown:
+      default-days: 0
     ignore:
       # Drupal 10 branch: never propose drupal:11 here (migration is done on deploy-multistep-drupal11)
       - dependency-name: "drupal"
@@ -19,3 +22,6 @@ updates:
     target-branch: "deploy-multistep-drupal11"
     schedule:
       interval: "daily"
+    # Default Dependabot cooldown delays freshly republished images. TEMP 0 to test the chain; set back to 1 after.
+    cooldown:
+      default-days: 0
