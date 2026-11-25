@@ -1,5 +1,5 @@
 # Digest pinned so Dependabot opens a PR each time the upstream tag is rebuilt (PHP/Debian/Drupal patches)
-FROM drupal:10-php8.3-apache-bookworm@sha256:5315b70f0abacf3c4a80f1b3acbb14e2a762e3b720679600cba8064b0899bf69
+FROM drupal:10-php8.3-apache-bookworm@sha256:399632f24f7c0d81517a8e8a2e8dbb4011094cd71749e90a264eb0b752d8f436
 
 # rm drupal
 RUN rm -rf /opt/drupal && mkdir /opt/drupal
